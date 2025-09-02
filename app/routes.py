@@ -33,7 +33,15 @@ async def register_form(request: Request):
     default_date = datetime.now() + timedelta(days=default_days)
     default_date_str = default_date.strftime("%Y-%m-%dT%H:%M")
     now_str = datetime.now().strftime("%Y-%m-%dT%H:%M")
-    return templates.TemplateResponse("register.html", {"request": request, "default_date": default_date_str, "default_days": default_days, "now_date": now_str})
+    return templates.TemplateResponse(
+        "register.html",
+        {
+            "request": request,
+            "default_date": default_date_str,
+            "default_days": default_days,
+            "now_date": now_str,
+        },
+    )
 
 
 @router.post("/register")
@@ -62,7 +70,9 @@ async def register_item(
         try:
             date_promised_parsed = datetime.fromisoformat(date_promised)
         except ValueError:
-            raise HTTPException(status_code=400, detail="Format de date promise invalide")
+            raise HTTPException(
+                status_code=400, detail="Format de date promise invalide"
+            )
     else:
         # Set default if not provided
         default_days = config.get("default_promised_days", 7)
@@ -314,7 +324,12 @@ async def get_deadlines(
             }
         )
     return templates.TemplateResponse(
-        "deadlines_list.html", {"request": request, "items": items_list, "owner": owner.upper() if owner else None}
+        "deadlines_list.html",
+        {
+            "request": request,
+            "items": items_list,
+            "owner": owner.upper() if owner else None,
+        },
     )
 
 
