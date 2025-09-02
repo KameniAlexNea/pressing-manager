@@ -1,6 +1,6 @@
 import os
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import yaml
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
@@ -29,7 +29,11 @@ async def home(request: Request):
 
 @router.get("/register", response_class=HTMLResponse)
 async def register_form(request: Request):
-    return templates.TemplateResponse("register.html", {"request": request})
+    default_days = config.get("default_promised_days", 7)
+    default_date = datetime.now() + timedelta(days=default_days)
+    default_date_str = default_date.strftime("%Y-%m-%dT%H:%M")
+    now_str = datetime.now().strftime("%Y-%m-%dT%H:%M")
+    return templates.TemplateResponse("register.html", {"request": request, "default_date": default_date_str, "default_days": default_days, "now_date": now_str})
 
 
 @router.post("/register")
@@ -59,6 +63,10 @@ async def register_item(
             date_promised_parsed = datetime.fromisoformat(date_promised)
         except ValueError:
             raise HTTPException(status_code=400, detail="Format de date promise invalide")
+    else:
+        # Set default if not provided
+        default_days = config.get("default_promised_days", 7)
+        date_promised_parsed = datetime.now() + timedelta(days=default_days)
 
     item_data = {
         "id": str(uuid.uuid4()),

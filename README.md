@@ -4,7 +4,7 @@ Efficient web application (FastAPI + SQLAlchemy + Bootstrap) to manage a dry-cle
 
 ## ✅ Features
 
-- Register clothing items with: description, owner (auto uppercased), contact (+237 format), price, optional notes, optional back-dated reception date, optional promised delivery date
+- Register clothing items with: description, owner (auto uppercased), contact (+237 format), price, optional notes, reception date (defaults to now), promised delivery date (defaults to now + configurable days)
 - Status transitions: received → cleaned → delivered (timestamps stored)
 - Storage suggestion logic driven by `config.yml` keywords
 - List pending (not yet cleaned) items older than N days
@@ -67,18 +67,20 @@ pressing-manager/
 Example:
 ```yaml
 storage_suggestions:
-	- keywords: ["chemise", "shirt"]
-		suggestion: "Ranger sur cintres"
-	- keywords: ["pantalon", "pants"]
-		suggestion: "Plier et ranger dans tiroir"
-	- keywords: ["robe", "dress"]
-		suggestion: "Ranger sur cintres avec housse"
-	- keywords: []
-		suggestion: "Stockage général"
+  - keywords: ["chemise", "shirt"]
+    suggestion: "Ranger sur cintres"
+  - keywords: ["pantalon", "pants"]
+    suggestion: "Plier et ranger dans tiroir"
+  - keywords: ["robe", "dress"]
+    suggestion: "Ranger sur cintres avec housse"
+  - keywords: []
+    suggestion: "Stockage général"
+
+default_promised_days: 7
 ```
 First matching keyword list wins; final empty list acts as default fallback.
 
-## 🚀 Quick Start
+`default_promised_days`: Number of days from now to set as default promised delivery date in registration form.## 🚀 Quick Start
 
 Using `uv` (preferred):
 ```bash
