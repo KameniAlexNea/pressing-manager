@@ -19,6 +19,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # Templates
 templates = Jinja2Templates(directory="templates")
 
+
 class ClothingItem(BaseModel):
     id: str = None
     description: str
@@ -29,6 +30,7 @@ class ClothingItem(BaseModel):
     date_cleaned: str = None
     notes: str = None
     date_delivered: str = None
+
 
 def init_db():
     conn = sqlite3.connect(DB_PATH)
@@ -48,15 +50,16 @@ def init_db():
     )
     # Add new columns if they don't exist
     try:
-        c.execute(f'ALTER TABLE {TABLE_NAME} ADD COLUMN notes TEXT')
+        c.execute(f"ALTER TABLE {TABLE_NAME} ADD COLUMN notes TEXT")
     except sqlite3.OperationalError:
         pass  # Column already exists
     try:
-        c.execute(f'ALTER TABLE {TABLE_NAME} ADD COLUMN date_delivered TEXT')
+        c.execute(f"ALTER TABLE {TABLE_NAME} ADD COLUMN date_delivered TEXT")
     except sqlite3.OperationalError:
         pass  # Column already exists
     conn.commit()
     conn.close()
+
 
 init_db()
 
@@ -68,13 +71,16 @@ if os.path.exists(config_path):
 else:
     config = {"storage_suggestions": []}
 
+
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
+
 @app.get("/register", response_class=HTMLResponse)
 async def register_form(request: Request):
     return templates.TemplateResponse("register.html", {"request": request})
+
 
 @app.post("/register")
 async def register_item(
@@ -83,8 +89,9 @@ async def register_item(
     owner: str = Form(...),
     price: float = Form(...),
     notes: str = Form(""),
-    date_received: str = Form("")
+    date_received: str = Form(""),
 ):
+    owner = owner.upper()  # Uppercase the owner name
     if date_received:
         try:
             date_received = datetime.fromisoformat(date_received).isoformat()
@@ -92,7 +99,7 @@ async def register_item(
             raise HTTPException(status_code=400, detail="Format de date invalide")
     else:
         date_received = datetime.now().isoformat()
-    
+
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     item_id = str(uuid.uuid4())
@@ -112,11 +119,15 @@ async def register_item(
     )
     conn.commit()
     conn.close()
-    return templates.TemplateResponse("register_success.html", {"request": request, "code": item_id})
+    return templates.TemplateResponse(
+        "register_success.html", {"request": request, "code": item_id}
+    )
+
 
 @app.get("/item", response_class=HTMLResponse)
 async def item_form(request: Request):
     return templates.TemplateResponse("item.html", {"request": request})
+
 
 @app.post("/item")
 async def get_item(request: Request, code: str = Form(...)):
@@ -137,8 +148,11 @@ async def get_item(request: Request, code: str = Form(...)):
             "notes": row[7],
             "date_delivered": row[8],
         }
-        return templates.TemplateResponse("item_details.html", {"request": request, "item": item})
+        return templates.TemplateResponse(
+            "item_details.html", {"request": request, "item": item}
+        )
     raise HTTPException(status_code=404, detail="Article non trouvé")
+
 
 @app.get("/item/{code}/clean")
 async def clean_item(request: Request, code: str):
@@ -152,8 +166,16 @@ async def clean_item(request: Request, code: str):
     conn.commit()
     conn.close()
     if c.rowcount > 0:
-        return templates.TemplateResponse("message.html", {"request": request, "message": "Article marqué comme nettoyé", "back_url": "/"})
+        return templates.TemplateResponse(
+            "message.html",
+            {
+                "request": request,
+                "message": "Article marqué comme nettoyé",
+                "back_url": "/",
+            },
+        )
     raise HTTPException(status_code=404, detail="Article non trouvé")
+
 
 @app.get("/item/{code}/deliver")
 async def deliver_item(request: Request, code: str):
@@ -167,8 +189,16 @@ async def deliver_item(request: Request, code: str):
     conn.commit()
     conn.close()
     if c.rowcount > 0:
-        return templates.TemplateResponse("message.html", {"request": request, "message": "Article marqué comme livré", "back_url": "/"})
+        return templates.TemplateResponse(
+            "message.html",
+            {
+                "request": request,
+                "message": "Article marqué comme livré",
+                "back_url": "/",
+            },
+        )
     raise HTTPException(status_code=404, detail="Article non trouvé")
+
 
 @app.get("/item/{code}/storage")
 async def suggest_storage(request: Request, code: str):
@@ -197,11 +227,15 @@ async def suggest_storage(request: Request, code: str):
         else:
             suggestion = "Stockage par défaut"
 
-    return templates.TemplateResponse("storage.html", {"request": request, "suggestion": suggestion, "code": code})
+    return templates.TemplateResponse(
+        "storage.html", {"request": request, "suggestion": suggestion, "code": code}
+    )
+
 
 @app.get("/pending", response_class=HTMLResponse)
 async def pending_form(request: Request):
     return templates.TemplateResponse("pending.html", {"request": request})
+
 
 @app.post("/pending")
 async def get_pending_items(request: Request, days: int = Form(...)):
@@ -229,14 +263,19 @@ async def get_pending_items(request: Request, days: int = Form(...)):
                 "date_delivered": row[8],
             }
         )
-    return templates.TemplateResponse("pending_list.html", {"request": request, "pending_items": items})
+    return templates.TemplateResponse(
+        "pending_list.html", {"request": request, "pending_items": items}
+    )
+
 
 @app.get("/owner", response_class=HTMLResponse)
 async def owner_form(request: Request):
     return templates.TemplateResponse("owner.html", {"request": request})
 
+
 @app.post("/owner")
 async def get_items_by_owner(request: Request, owner: str = Form(...)):
+    owner = owner.upper()  # Uppercase for case-insensitive search
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute(f"SELECT * FROM {TABLE_NAME} WHERE owner = ?", (owner,))
@@ -257,7 +296,10 @@ async def get_items_by_owner(request: Request, owner: str = Form(...)):
                 "date_delivered": row[8],
             }
         )
-    return templates.TemplateResponse("owner_list.html", {"request": request, "items": items, "owner": owner})
+    return templates.TemplateResponse(
+        "owner_list.html", {"request": request, "items": items, "owner": owner}
+    )
+
 
 @app.get("/stats", response_class=HTMLResponse)
 async def stats_page(request: Request):
@@ -286,7 +328,10 @@ async def stats_page(request: Request):
         "pending_items": pending_items,
         "total_revenue": total_revenue,
     }
-    return templates.TemplateResponse("stats.html", {"request": request, "stats": stats})
+    return templates.TemplateResponse(
+        "stats.html", {"request": request, "stats": stats}
+    )
+
 
 @app.get("/item/{code}")
 async def view_item(request: Request, code: str):
@@ -307,5 +352,7 @@ async def view_item(request: Request, code: str):
             "notes": row[7],
             "date_delivered": row[8],
         }
-        return templates.TemplateResponse("item_details.html", {"request": request, "item": item})
+        return templates.TemplateResponse(
+            "item_details.html", {"request": request, "item": item}
+        )
     raise HTTPException(status_code=404, detail="Article non trouvé")
