@@ -1,12 +1,14 @@
-from fastapi import APIRouter, Request, Form, HTTPException, Depends
+import os
+import uuid
+from datetime import datetime
+
+import yaml
+from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
-from . import crud, models, database
-from datetime import datetime
-import uuid
-import yaml
-import os
+
+from . import crud, database
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
@@ -19,13 +21,16 @@ if os.path.exists(config_path):
 else:
     config = {"storage_suggestions": []}
 
+
 @router.get("/", response_class=HTMLResponse)
 async def home(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
+
 @router.get("/register", response_class=HTMLResponse)
 async def register_form(request: Request):
     return templates.TemplateResponse("register.html", {"request": request})
+
 
 @router.post("/register")
 async def register_item(
@@ -36,7 +41,7 @@ async def register_item(
     notes: str = Form(""),
     date_received: str = Form(""),
     contact: str = Form(""),
-    db: Session = Depends(database.get_db)
+    db: Session = Depends(database.get_db),
 ):
     owner = owner.upper()
     if date_received:
@@ -62,12 +67,16 @@ async def register_item(
         "register_success.html", {"request": request, "code": item_data["id"]}
     )
 
+
 @router.get("/item", response_class=HTMLResponse)
 async def item_form(request: Request):
     return templates.TemplateResponse("item.html", {"request": request})
 
+
 @router.post("/item")
-async def get_item(request: Request, code: str = Form(...), db: Session = Depends(database.get_db)):
+async def get_item(
+    request: Request, code: str = Form(...), db: Session = Depends(database.get_db)
+):
     item = crud.get_item(db, code)
     if item:
         item_dict = {
@@ -76,10 +85,16 @@ async def get_item(request: Request, code: str = Form(...), db: Session = Depend
             "owner": item.owner,
             "price": item.price,
             "status": item.status,
-            "date_received": item.date_received.isoformat() if item.date_received else None,
-            "date_cleaned": item.date_cleaned.isoformat() if item.date_cleaned else None,
+            "date_received": (
+                item.date_received.isoformat() if item.date_received else None
+            ),
+            "date_cleaned": (
+                item.date_cleaned.isoformat() if item.date_cleaned else None
+            ),
             "notes": item.notes,
-            "date_delivered": item.date_delivered.isoformat() if item.date_delivered else None,
+            "date_delivered": (
+                item.date_delivered.isoformat() if item.date_delivered else None
+            ),
             "contact": item.contact,
         }
         return templates.TemplateResponse(
@@ -87,8 +102,11 @@ async def get_item(request: Request, code: str = Form(...), db: Session = Depend
         )
     raise HTTPException(status_code=404, detail="Article non trouvé")
 
+
 @router.get("/item/{code}/clean")
-async def clean_item(request: Request, code: str, db: Session = Depends(database.get_db)):
+async def clean_item(
+    request: Request, code: str, db: Session = Depends(database.get_db)
+):
     item = crud.update_item_status(db, code, "cleaned", "date_cleaned")
     if item:
         return templates.TemplateResponse(
@@ -101,8 +119,11 @@ async def clean_item(request: Request, code: str, db: Session = Depends(database
         )
     raise HTTPException(status_code=404, detail="Article non trouvé")
 
+
 @router.get("/item/{code}/deliver")
-async def deliver_item(request: Request, code: str, db: Session = Depends(database.get_db)):
+async def deliver_item(
+    request: Request, code: str, db: Session = Depends(database.get_db)
+):
     item = crud.update_item_status(db, code, "delivered", "date_delivered")
     if item:
         return templates.TemplateResponse(
@@ -115,8 +136,11 @@ async def deliver_item(request: Request, code: str, db: Session = Depends(databa
         )
     raise HTTPException(status_code=404, detail="Article non trouvé")
 
+
 @router.get("/item/{code}/storage")
-async def suggest_storage(request: Request, code: str, db: Session = Depends(database.get_db)):
+async def suggest_storage(
+    request: Request, code: str, db: Session = Depends(database.get_db)
+):
     item = crud.get_item(db, code)
     if not item:
         raise HTTPException(status_code=404, detail="Article non trouvé")
@@ -139,55 +163,81 @@ async def suggest_storage(request: Request, code: str, db: Session = Depends(dat
         "storage.html", {"request": request, "suggestion": suggestion, "code": code}
     )
 
+
 @router.get("/pending", response_class=HTMLResponse)
 async def pending_form(request: Request):
     return templates.TemplateResponse("pending.html", {"request": request})
 
+
 @router.post("/pending")
-async def get_pending_items(request: Request, days: int = Form(...), db: Session = Depends(database.get_db)):
+async def get_pending_items(
+    request: Request, days: int = Form(...), db: Session = Depends(database.get_db)
+):
     items = crud.get_pending_items(db, days)
     items_list = []
     for item in items:
-        items_list.append({
-            "id": item.id,
-            "description": item.description,
-            "owner": item.owner,
-            "price": item.price,
-            "status": item.status,
-            "date_received": item.date_received.isoformat() if item.date_received else None,
-            "date_cleaned": item.date_cleaned.isoformat() if item.date_cleaned else None,
-            "notes": item.notes,
-            "date_delivered": item.date_delivered.isoformat() if item.date_delivered else None,
-            "contact": item.contact,
-        })
+        items_list.append(
+            {
+                "id": item.id,
+                "description": item.description,
+                "owner": item.owner,
+                "price": item.price,
+                "status": item.status,
+                "date_received": (
+                    item.date_received.isoformat() if item.date_received else None
+                ),
+                "date_cleaned": (
+                    item.date_cleaned.isoformat() if item.date_cleaned else None
+                ),
+                "notes": item.notes,
+                "date_delivered": (
+                    item.date_delivered.isoformat() if item.date_delivered else None
+                ),
+                "contact": item.contact,
+            }
+        )
     return templates.TemplateResponse(
         "pending_list.html", {"request": request, "pending_items": items_list}
     )
+
 
 @router.get("/owner", response_class=HTMLResponse)
 async def owner_form(request: Request):
     return templates.TemplateResponse("owner.html", {"request": request})
 
+
 @router.post("/owner")
-async def get_items_by_owner(request: Request, owner: str = Form(...), db: Session = Depends(database.get_db)):
+async def get_items_by_owner(
+    request: Request, owner: str = Form(...), db: Session = Depends(database.get_db)
+):
     items = crud.get_items_by_owner(db, owner)
     items_list = []
     for item in items:
-        items_list.append({
-            "id": item.id,
-            "description": item.description,
-            "owner": item.owner,
-            "price": item.price,
-            "status": item.status,
-            "date_received": item.date_received.isoformat() if item.date_received else None,
-            "date_cleaned": item.date_cleaned.isoformat() if item.date_cleaned else None,
-            "notes": item.notes,
-            "date_delivered": item.date_delivered.isoformat() if item.date_delivered else None,
-            "contact": item.contact,
-        })
+        items_list.append(
+            {
+                "id": item.id,
+                "description": item.description,
+                "owner": item.owner,
+                "price": item.price,
+                "status": item.status,
+                "date_received": (
+                    item.date_received.isoformat() if item.date_received else None
+                ),
+                "date_cleaned": (
+                    item.date_cleaned.isoformat() if item.date_cleaned else None
+                ),
+                "notes": item.notes,
+                "date_delivered": (
+                    item.date_delivered.isoformat() if item.date_delivered else None
+                ),
+                "contact": item.contact,
+            }
+        )
     return templates.TemplateResponse(
-        "owner_list.html", {"request": request, "items": items_list, "owner": owner.upper()}
+        "owner_list.html",
+        {"request": request, "items": items_list, "owner": owner.upper()},
     )
+
 
 @router.get("/stats", response_class=HTMLResponse)
 async def stats_page(request: Request, db: Session = Depends(database.get_db)):
@@ -196,8 +246,11 @@ async def stats_page(request: Request, db: Session = Depends(database.get_db)):
         "stats.html", {"request": request, "stats": stats}
     )
 
+
 @router.get("/item/{code}")
-async def view_item(request: Request, code: str, db: Session = Depends(database.get_db)):
+async def view_item(
+    request: Request, code: str, db: Session = Depends(database.get_db)
+):
     item = crud.get_item(db, code)
     if item:
         item_dict = {
@@ -206,10 +259,16 @@ async def view_item(request: Request, code: str, db: Session = Depends(database.
             "owner": item.owner,
             "price": item.price,
             "status": item.status,
-            "date_received": item.date_received.isoformat() if item.date_received else None,
-            "date_cleaned": item.date_cleaned.isoformat() if item.date_cleaned else None,
+            "date_received": (
+                item.date_received.isoformat() if item.date_received else None
+            ),
+            "date_cleaned": (
+                item.date_cleaned.isoformat() if item.date_cleaned else None
+            ),
             "notes": item.notes,
-            "date_delivered": item.date_delivered.isoformat() if item.date_delivered else None,
+            "date_delivered": (
+                item.date_delivered.isoformat() if item.date_delivered else None
+            ),
             "contact": item.contact,
         }
         return templates.TemplateResponse(

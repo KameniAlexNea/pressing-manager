@@ -1,6 +1,8 @@
-from sqlalchemy import Column, String, Float, DateTime
+from sqlalchemy import Column, DateTime, Float, String
 from sqlalchemy.sql import func
+
 from .database import Base
+
 
 class ClothingItem(Base):
     __tablename__ = "clothing_items"

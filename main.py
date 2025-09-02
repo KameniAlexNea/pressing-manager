@@ -1,7 +1,8 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from app.database import engine
+
 from app import models
+from app.database import engine
 from app.routes import router
 
 # Create database tables
