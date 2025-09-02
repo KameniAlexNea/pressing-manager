@@ -4,3 +4,4 @@ pydantic
 pyyaml
 jinja2
 python-multipart
+sqlalchemy
