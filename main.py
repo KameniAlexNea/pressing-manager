@@ -82,12 +82,20 @@ async def register_item(
     description: str = Form(...),
     owner: str = Form(...),
     price: float = Form(...),
-    notes: str = Form("")
+    notes: str = Form(""),
+    date_received: str = Form("")
 ):
+    if date_received:
+        try:
+            date_received = datetime.fromisoformat(date_received).isoformat()
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Format de date invalide")
+    else:
+        date_received = datetime.now().isoformat()
+    
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     item_id = str(uuid.uuid4())
-    date_received = datetime.now().isoformat()
     c.execute(
         f"""INSERT INTO {TABLE_NAME} (id, description, owner, price, status, date_received, notes, date_delivered)
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
