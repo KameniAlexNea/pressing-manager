@@ -14,6 +14,7 @@
                 <h5 class="card-title">ID: {{ item.id }}</h5>
                 <p class="card-text"><strong>Description:</strong> {{ item.description }}</p>
                 <p class="card-text"><strong>Propriétaire:</strong> {{ item.owner }}</p>
+                <p class="card-text"><strong>Contact:</strong> {{ item.contact or 'N/A' }}</p>
                 <p class="card-text"><strong>Prix:</strong> {{ item.price }}</p>
                 <p class="card-text"><strong>Statut:</strong> {{ item.status }}</p>
                 <p class="card-text"><strong>Date de réception:</strong> {{ item.date_received }}</p>

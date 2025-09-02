@@ -17,6 +17,7 @@
                         <th>ID</th>
                         <th>Description</th>
                         <th>Propriétaire</th>
+                        <th>Contact</th>
                         <th>Prix</th>
                         <th>Statut</th>
                         <th>Date de réception</th>
@@ -29,6 +30,7 @@
                         <td>{{ item.id }}</td>
                         <td>{{ item.description }}</td>
                         <td>{{ item.owner }}</td>
+                        <td>{{ item.contact or 'N/A' }}</td>
                         <td>{{ item.price }}</td>
                         <td>{{ item.status }}</td>
                         <td>{{ item.date_received }}</td>

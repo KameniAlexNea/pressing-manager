@@ -30,6 +30,7 @@ class ClothingItem(BaseModel):
     date_cleaned: str = None
     notes: str = None
     date_delivered: str = None
+    contact: str = None
 
 
 def init_db():
@@ -45,16 +46,13 @@ def init_db():
                     date_received TEXT,
                     date_cleaned TEXT,
                     notes TEXT,
-                    date_delivered TEXT
+                    date_delivered TEXT,
+                    contact TEXT
                  )"""
     )
     # Add new columns if they don't exist
     try:
         c.execute(f"ALTER TABLE {TABLE_NAME} ADD COLUMN notes TEXT")
-    except sqlite3.OperationalError:
-        pass  # Column already exists
-    try:
-        c.execute(f"ALTER TABLE {TABLE_NAME} ADD COLUMN date_delivered TEXT")
     except sqlite3.OperationalError:
         pass  # Column already exists
     conn.commit()
@@ -90,6 +88,7 @@ async def register_item(
     price: float = Form(...),
     notes: str = Form(""),
     date_received: str = Form(""),
+    contact: str = Form(""),
 ):
     owner = owner.upper()  # Uppercase the owner name
     if date_received:
@@ -104,8 +103,8 @@ async def register_item(
     c = conn.cursor()
     item_id = str(uuid.uuid4())
     c.execute(
-        f"""INSERT INTO {TABLE_NAME} (id, description, owner, price, status, date_received, notes, date_delivered)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+        f"""INSERT INTO {TABLE_NAME} (id, description, owner, price, status, date_received, notes, date_delivered, contact)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         (
             item_id,
             description,
@@ -115,6 +114,7 @@ async def register_item(
             date_received,
             notes,
             None,
+            contact,
         ),
     )
     conn.commit()
@@ -147,6 +147,7 @@ async def get_item(request: Request, code: str = Form(...)):
             "date_cleaned": row[6],
             "notes": row[7],
             "date_delivered": row[8],
+            "contact": row[9],
         }
         return templates.TemplateResponse(
             "item_details.html", {"request": request, "item": item}
@@ -261,6 +262,7 @@ async def get_pending_items(request: Request, days: int = Form(...)):
                 "date_cleaned": row[6],
                 "notes": row[7],
                 "date_delivered": row[8],
+                "contact": row[9],
             }
         )
     return templates.TemplateResponse(
@@ -294,6 +296,7 @@ async def get_items_by_owner(request: Request, owner: str = Form(...)):
                 "date_cleaned": row[6],
                 "notes": row[7],
                 "date_delivered": row[8],
+                "contact": row[9],
             }
         )
     return templates.TemplateResponse(
@@ -351,6 +354,7 @@ async def view_item(request: Request, code: str):
             "date_cleaned": row[6],
             "notes": row[7],
             "date_delivered": row[8],
+            "contact": row[9],
         }
         return templates.TemplateResponse(
             "item_details.html", {"request": request, "item": item}
