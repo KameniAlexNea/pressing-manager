@@ -7,3 +7,5 @@ storage_suggestions:
     suggestion: "Ranger sur cintres avec housse"
   - keywords: []
     suggestion: "Stockage général"
+
+default_promised_days: 7

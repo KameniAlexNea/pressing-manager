@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Détails de l'article</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
+
 <body>
     <div class="container mt-5">
         <h1 class="text-center mb-4">Détails de l'article</h1>
@@ -14,12 +16,14 @@
                 <h5 class="card-title">ID: {{ item.id }}</h5>
                 <p class="card-text"><strong>Description:</strong> {{ item.description }}</p>
                 <p class="card-text"><strong>Propriétaire:</strong> {{ item.owner }}</p>
+                <p class="card-text"><strong>Contact:</strong> {{ item.contact or 'N/A' }}</p>
                 <p class="card-text"><strong>Prix:</strong> {{ item.price }}</p>
                 <p class="card-text"><strong>Statut:</strong> {{ item.status }}</p>
                 <p class="card-text"><strong>Date de réception:</strong> {{ item.date_received }}</p>
                 <p class="card-text"><strong>Date de nettoyage:</strong> {{ item.date_cleaned or 'N/A' }}</p>
                 <p class="card-text"><strong>Notes:</strong> {{ item.notes or 'N/A' }}</p>
                 <p class="card-text"><strong>Date de livraison:</strong> {{ item.date_delivered or 'N/A' }}</p>
+                <p class="card-text"><strong>Date promise:</strong> {{ item.date_promised or 'N/A' }}</p>
                 {% if item.status == 'received' %}
                 <a href="/item/{{ item.id }}/clean" class="btn btn-warning">Marquer comme nettoyé</a>
                 {% endif %}
@@ -35,4 +39,5 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
+
 </html>
