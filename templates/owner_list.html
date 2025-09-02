@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Articles par propriétaire</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center mb-4">Articles de {{ owner }}</h1>
+        {% if items %}
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Description</th>
+                        <th>Prix</th>
+                        <th>Statut</th>
+                        <th>Date de réception</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                    <tr>
+                        <td>{{ item.id }}</td>
+                        <td>{{ item.description }}</td>
+                        <td>{{ item.price }}</td>
+                        <td>{{ item.status }}</td>
+                        <td>{{ item.date_received }}</td>
+                        <td>
+                            <a href="/item/{{ item.id }}" class="btn btn-primary btn-sm">Voir</a>
+                            {% if item.status == 'received' %}
+                            <a href="/item/{{ item.id }}/clean" class="btn btn-warning btn-sm">Nettoyer</a>
+                            {% endif %}
+                            {% if item.status == 'cleaned' %}
+                            <a href="/item/{{ item.id }}/deliver" class="btn btn-success btn-sm">Livrer</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-center">Aucun article trouvé pour ce propriétaire.</p>
+        {% endif %}
+        <div class="text-center mt-3">
+            <a href="/" class="btn btn-secondary">Retour à l'accueil</a>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

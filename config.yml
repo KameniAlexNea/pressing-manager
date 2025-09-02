@@ -1,0 +1,9 @@
+storage_suggestions:
+  - keywords: ["chemise", "shirt"]
+    suggestion: "Ranger sur cintres"
+  - keywords: ["pantalon", "pants"]
+    suggestion: "Plier et ranger dans tiroir"
+  - keywords: ["robe", "dress"]
+    suggestion: "Ranger sur cintres avec housse"
+  - keywords: []
+    suggestion: "Stockage général"
