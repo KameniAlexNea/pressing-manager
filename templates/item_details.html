@@ -21,6 +21,7 @@
                 <p class="card-text"><strong>Date de nettoyage:</strong> {{ item.date_cleaned or 'N/A' }}</p>
                 <p class="card-text"><strong>Notes:</strong> {{ item.notes or 'N/A' }}</p>
                 <p class="card-text"><strong>Date de livraison:</strong> {{ item.date_delivered or 'N/A' }}</p>
+                <p class="card-text"><strong>Date promise:</strong> {{ item.date_promised or 'N/A' }}</p>
                 {% if item.status == 'received' %}
                 <a href="/item/{{ item.id }}/clean" class="btn btn-warning">Marquer comme nettoyé</a>
                 {% endif %}

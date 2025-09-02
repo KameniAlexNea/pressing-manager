@@ -39,6 +39,15 @@ def create_item(db: Session, item: dict):
     return db_item
 
 
+def get_items_with_deadlines(db: Session, owner: str = None):
+    query = db.query(models.ClothingItem).filter(
+        models.ClothingItem.date_promised.isnot(None)
+    )
+    if owner:
+        query = query.filter(models.ClothingItem.owner == owner.upper())
+    return query.order_by(models.ClothingItem.date_promised).all()
+
+
 def update_item_status(db: Session, item_id: str, status: str, date_field: str = None):
     item = (
         db.query(models.ClothingItem).filter(models.ClothingItem.id == item_id).first()

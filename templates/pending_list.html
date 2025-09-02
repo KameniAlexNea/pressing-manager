@@ -21,6 +21,7 @@
                         <th>Prix</th>
                         <th>Statut</th>
                         <th>Date de réception</th>
+                        <th>Date promise</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -34,6 +35,7 @@
                         <td>{{ item.price }}</td>
                         <td>{{ item.status }}</td>
                         <td>{{ item.date_received }}</td>
+                        <td>{{ item.date_promised or 'N/A' }}</td>
                         <td>
                             <a href="/item/{{ item.id }}/clean" class="btn btn-warning btn-sm">Nettoyer</a>
                         </td>

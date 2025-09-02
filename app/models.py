@@ -17,3 +17,4 @@ class ClothingItem(Base):
     notes = Column(String, nullable=True)
     date_delivered = Column(DateTime(timezone=True), nullable=True)
     contact = Column(String, nullable=True)
+    date_promised = Column(DateTime(timezone=True), nullable=True)

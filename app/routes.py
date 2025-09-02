@@ -41,6 +41,7 @@ async def register_item(
     notes: str = Form(""),
     date_received: str = Form(""),
     contact: str = Form(""),
+    date_promised: str = Form(""),
     db: Session = Depends(database.get_db),
 ):
     owner = owner.upper()
@@ -52,6 +53,13 @@ async def register_item(
     else:
         date_received = datetime.now()
 
+    date_promised_parsed = None
+    if date_promised:
+        try:
+            date_promised_parsed = datetime.fromisoformat(date_promised)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Format de date promise invalide")
+
     item_data = {
         "id": str(uuid.uuid4()),
         "description": description,
@@ -61,6 +69,7 @@ async def register_item(
         "date_received": date_received,
         "notes": notes or None,
         "contact": contact or None,
+        "date_promised": date_promised_parsed,
     }
     crud.create_item(db, item_data)
     return templates.TemplateResponse(
@@ -96,6 +105,9 @@ async def get_item(
                 item.date_delivered.isoformat() if item.date_delivered else None
             ),
             "contact": item.contact,
+            "date_promised": (
+                item.date_promised.isoformat() if item.date_promised else None
+            ),
         }
         return templates.TemplateResponse(
             "item_details.html", {"request": request, "item": item_dict}
@@ -194,6 +206,9 @@ async def get_pending_items(
                     item.date_delivered.isoformat() if item.date_delivered else None
                 ),
                 "contact": item.contact,
+                "date_promised": (
+                    item.date_promised.isoformat() if item.date_promised else None
+                ),
             }
         )
     return templates.TemplateResponse(
@@ -231,6 +246,9 @@ async def get_items_by_owner(
                     item.date_delivered.isoformat() if item.date_delivered else None
                 ),
                 "contact": item.contact,
+                "date_promised": (
+                    item.date_promised.isoformat() if item.date_promised else None
+                ),
             }
         )
     return templates.TemplateResponse(
@@ -244,6 +262,51 @@ async def stats_page(request: Request, db: Session = Depends(database.get_db)):
     stats = crud.get_stats(db)
     return templates.TemplateResponse(
         "stats.html", {"request": request, "stats": stats}
+    )
+
+
+@router.get("/deadlines", response_class=HTMLResponse)
+async def deadlines_form(request: Request):
+    return templates.TemplateResponse("deadlines.html", {"request": request})
+
+
+@router.post("/deadlines")
+async def get_deadlines(
+    request: Request, owner: str = Form(""), db: Session = Depends(database.get_db)
+):
+    items = crud.get_items_with_deadlines(db, owner if owner else None)
+    items_list = []
+    now = datetime.now()
+    for item in items:
+        days_left = None
+        if item.date_promised:
+            days_left = (item.date_promised - now).days
+        items_list.append(
+            {
+                "id": item.id,
+                "description": item.description,
+                "owner": item.owner,
+                "price": item.price,
+                "status": item.status,
+                "date_received": (
+                    item.date_received.isoformat() if item.date_received else None
+                ),
+                "date_cleaned": (
+                    item.date_cleaned.isoformat() if item.date_cleaned else None
+                ),
+                "notes": item.notes,
+                "date_delivered": (
+                    item.date_delivered.isoformat() if item.date_delivered else None
+                ),
+                "contact": item.contact,
+                "date_promised": (
+                    item.date_promised.isoformat() if item.date_promised else None
+                ),
+                "days_left": days_left,
+            }
+        )
+    return templates.TemplateResponse(
+        "deadlines_list.html", {"request": request, "items": items_list, "owner": owner.upper() if owner else None}
     )
 
 
@@ -270,6 +333,9 @@ async def view_item(
                 item.date_delivered.isoformat() if item.date_delivered else None
             ),
             "contact": item.contact,
+            "date_promised": (
+                item.date_promised.isoformat() if item.date_promised else None
+            ),
         }
         return templates.TemplateResponse(
             "item_details.html", {"request": request, "item": item_dict}
