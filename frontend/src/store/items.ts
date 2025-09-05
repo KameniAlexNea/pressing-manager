@@ -2,9 +2,15 @@ import localforage from 'localforage'
 import dayjs from 'dayjs'
 import { v4 as uuidv4 } from 'uuid'
 
+export type ItemLine = {
+  type: string
+  qty: number
+  notes?: string
+}
 export type ClothingItem = {
   id: string
-  description: string
+  items?: ItemLine[]
+  description?: string
   owner: string
   price: number
   status: 'received' | 'cleaned' | 'delivered'
@@ -15,6 +21,7 @@ export type ClothingItem = {
   contact?: string | null
   date_promised?: string | null
   image?: string | null // base64 or data URL
+  amountGiven?: number | null // payment at registration
 }
 
 const DB_KEY = 'pressing_items'
@@ -27,13 +34,16 @@ export async function getAll(): Promise<ClothingItem[]> {
 }
 
 async function saveAll(items: ClothingItem[]): Promise<void> {
-  await localforage.setItem(DB_KEY, items)
+  // Save only plain objects, not Vue refs/reactives
+  const plain = items.map(i => ({ ...i, items: i.items ? i.items.map(x => ({ ...x })) : [] }))
+  await localforage.setItem(DB_KEY, plain)
 }
 
 export async function createItem(data: Partial<ClothingItem>): Promise<ClothingItem> {
-  const items = await getAll()
+  const all = await getAll()
   const item: ClothingItem = {
     id: uuidv4(),
+    items: data.items || [],
     description: data.description || '',
     owner: (data.owner || '').toUpperCase(),
     price: Number(data.price || 0),
@@ -45,9 +55,10 @@ export async function createItem(data: Partial<ClothingItem>): Promise<ClothingI
     contact: data.contact || null,
     date_promised: data.date_promised || dayjs().add(7, 'day').toISOString(),
     image: data.image || null,
+    amountGiven: typeof data.amountGiven === 'number' ? data.amountGiven : null,
   }
-  items.push(item)
-  await saveAll(items)
+  all.push(item)
+  await saveAll(all)
   return item
 }
 

@@ -1,4 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
+
+
 import Home from '../views/Home.vue'
 import Register from '../views/Register.vue'
 import Item from '../views/Item.vue'
@@ -7,6 +9,8 @@ import Owner from '../views/Owner.vue'
 import Deadlines from '../views/Deadlines.vue'
 import Stats from '../views/Stats.vue'
 import Storage from '../views/Storage.vue'
+import Types from '../views/Types.vue'
+
 
 const routes = [
   { path: '/', component: Home, meta: { title: 'Accueil' } },
@@ -17,6 +21,7 @@ const routes = [
   { path: '/deadlines', component: Deadlines, meta: { title: 'Délais' } },
   { path: '/stats', component: Stats, meta: { title: 'Statistiques' } },
   { path: '/storage', component: Storage, meta: { title: 'Sauvegarde' } },
+  { path: '/types', component: Types, meta: { title: 'Types' } },
 ]
 
 const router = createRouter({

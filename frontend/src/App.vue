@@ -35,6 +35,10 @@
           <template #icon><DatabaseOutlined /></template>
           Sauvegarde
         </a-menu-item>
+        <a-menu-item key="/types">
+          <template #icon><DatabaseOutlined /></template>
+          Types
+        </a-menu-item>
       </a-menu>
     </a-layout-sider>
     <a-layout>
