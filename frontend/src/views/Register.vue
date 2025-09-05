@@ -22,6 +22,17 @@
       <a-form-item label="Notes">
         <a-textarea v-model:value="form.notes" rows="3" />
       </a-form-item>
+      <a-form-item label="Photo (optionnelle)">
+        <input
+          type="file"
+          accept="image/*"
+          capture="environment"
+          @change="onImageChange"
+        />
+        <div v-if="imageDataUrl" style="margin-top: 0.5em;">
+          <img :src="imageDataUrl" alt="Aperçu vêtement" style="max-width: 200px; max-height: 200px; border: 1px solid #ccc;" />
+        </div>
+      </a-form-item>
       <a-button type="primary" html-type="submit" block>Enregistrer</a-button>
     </a-form>
     <a-divider />
@@ -33,6 +44,25 @@
 import dayjs, { Dayjs } from 'dayjs'
 import { reactive, ref } from 'vue'
 import { createItem } from '../store/items'
+
+// Optional image upload
+const imageFile = ref<File|null>(null)
+const imageDataUrl = ref<string|null>(null)
+
+function onImageChange(event: Event) {
+  const target = event.target as HTMLInputElement
+  if (target.files && target.files[0]) {
+    imageFile.value = target.files[0]
+    const reader = new FileReader()
+    reader.onload = e => {
+      imageDataUrl.value = e.target?.result as string
+    }
+    reader.readAsDataURL(target.files[0])
+  } else {
+    imageFile.value = null
+    imageDataUrl.value = null
+  }
+}
 
 type FormT = {
   description: string
@@ -66,6 +96,7 @@ async function onSubmit() {
     date_received: form.date_received?.toISOString(),
     date_promised: form.date_promised?.toISOString(),
     notes: form.notes,
+    image: imageDataUrl.value || undefined,
   })
   savedId.value = res.id
 }

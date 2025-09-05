@@ -23,6 +23,9 @@
         <a-descriptions-item label="Promis">{{ item.date_promised || 'N/A' }}</a-descriptions-item>
         <a-descriptions-item label="Notes">{{ item.notes || 'N/A' }}</a-descriptions-item>
       </a-descriptions>
+      <div v-if="item.image" style="margin: 1em 0; text-align: center;">
+        <img :src="item.image" alt="Photo vêtement" style="max-width: 200px; max-height: 200px; border: 1px solid #ccc;" />
+      </div>
       <a-space style="margin-top:8px">
         <a-button v-if="item.status==='received'" @click="markClean">Marquer nettoyé</a-button>
         <a-button v-if="item.status==='cleaned'" type="primary" @click="markDelivered">Marquer livré</a-button>

@@ -14,6 +14,7 @@ export type ClothingItem = {
   notes?: string | null
   contact?: string | null
   date_promised?: string | null
+  image?: string | null // base64 or data URL
 }
 
 const DB_KEY = 'pressing_items'
@@ -43,6 +44,7 @@ export async function createItem(data: Partial<ClothingItem>): Promise<ClothingI
     notes: data.notes || null,
     contact: data.contact || null,
     date_promised: data.date_promised || dayjs().add(7, 'day').toISOString(),
+    image: data.image || null,
   }
   items.push(item)
   await saveAll(items)
