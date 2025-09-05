@@ -3,14 +3,38 @@
     <a-layout-sider :collapsible="true" v-model:collapsed="collapsed" breakpoint="lg">
       <div class="logo">PM</div>
       <a-menu theme="dark" mode="inline" :selectedKeys="[selectedKey]" @click="onMenuClick">
-        <a-menu-item key="/">Accueil</a-menu-item>
-        <a-menu-item key="/register">Enregistrer</a-menu-item>
-        <a-menu-item key="/item">Article</a-menu-item>
-        <a-menu-item key="/pending">En attente</a-menu-item>
-        <a-menu-item key="/owner">Par propriétaire</a-menu-item>
-        <a-menu-item key="/deadlines">Délais</a-menu-item>
-        <a-menu-item key="/stats">Statistiques</a-menu-item>
-        <a-menu-item key="/storage">Sauvegarde</a-menu-item>
+        <a-menu-item key="/">
+          <template #icon><HomeOutlined /></template>
+          Accueil
+        </a-menu-item>
+        <a-menu-item key="/register">
+          <template #icon><PlusCircleOutlined /></template>
+          Enregistrer
+        </a-menu-item>
+        <a-menu-item key="/item">
+          <template #icon><SearchOutlined /></template>
+          Article
+        </a-menu-item>
+        <a-menu-item key="/pending">
+          <template #icon><ClockCircleOutlined /></template>
+          En attente
+        </a-menu-item>
+        <a-menu-item key="/owner">
+          <template #icon><UserOutlined /></template>
+          Par propriétaire
+        </a-menu-item>
+        <a-menu-item key="/deadlines">
+          <template #icon><CalendarOutlined /></template>
+          Délais
+        </a-menu-item>
+        <a-menu-item key="/stats">
+          <template #icon><BarChartOutlined /></template>
+          Statistiques
+        </a-menu-item>
+        <a-menu-item key="/storage">
+          <template #icon><DatabaseOutlined /></template>
+          Sauvegarde
+        </a-menu-item>
       </a-menu>
     </a-layout-sider>
     <a-layout>
@@ -33,6 +57,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { HomeOutlined, PlusCircleOutlined, SearchOutlined, ClockCircleOutlined, UserOutlined, CalendarOutlined, BarChartOutlined, DatabaseOutlined } from '@ant-design/icons-vue'
 
 const router = useRouter()
 const route = useRoute()

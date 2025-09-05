@@ -19,7 +19,8 @@ export type ClothingItem = {
 const DB_KEY = 'pressing_items'
 localforage.config({ name: 'pressing-manager' })
 
-async function getAll(): Promise<ClothingItem[]> {
+
+export async function getAll(): Promise<ClothingItem[]> {
   const arr = (await localforage.getItem<ClothingItem[]>(DB_KEY)) || []
   return arr
 }
