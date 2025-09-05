@@ -215,3 +215,15 @@ Open an issue or extend the README with a FAQ section as needs emerge.
 
 ---
 Built for a lightweight, local-first pressing workflow. Adapt, extend, and refine as operations grow.
+
+## Frontend (Vue 3 + Vite)
+
+The `frontend/` folder contains a mobile-friendly SPA using Ant Design Vue and local storage. Run it with:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Then open http://localhost:5173
