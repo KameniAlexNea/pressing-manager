@@ -81,17 +81,40 @@ watch(() => route.meta?.title as string | undefined, (title) => {
 </script>
 
 <style>
-body { margin: 0; }
-.logo { height: 32px; margin: 16px; background: rgba(255,255,255,0.2); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; border-radius:4px; }
-.site-header {
-  background: #222;
-  padding: 0 16px;
+body {
+  margin: 0;
+  font-family: 'Inter', 'Segoe UI', 'Arial', sans-serif;
+}
+.logo {
+  height: 32px;
+  margin: 16px;
+  background: rgba(255,255,255,0.2);
+  color:#fff;
   display:flex;
   align-items:center;
+  justify-content:center;
+  font-weight:700;
+  border-radius:4px;
+}
+.site-header {
+  background: #2a3f5f;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 2px 8px rgba(42,63,95,0.08);
 }
 .title {
   font-weight: 700;
   color: #fff;
+  letter-spacing: 1px;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.12);
+  font-family: 'Inter', 'Segoe UI', 'Arial', sans-serif;
 }
-.site-content { background: #fff; padding: 16px; min-height: calc(100vh - 160px); border-radius: 8px; }
+.site-content {
+  color: #1a2233;
+  background: #fff;
+  padding: 16px;
+  min-height: calc(100vh - 160px);
+  border-radius: 8px;
+}
 </style>
