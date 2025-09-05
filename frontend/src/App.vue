@@ -83,7 +83,15 @@ watch(() => route.meta?.title as string | undefined, (title) => {
 <style>
 body { margin: 0; }
 .logo { height: 32px; margin: 16px; background: rgba(255,255,255,0.2); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; border-radius:4px; }
-.site-header { background: #fff; padding: 0 16px; display:flex; align-items:center; }
-.title { font-weight: 700; }
+.site-header {
+  background: #222;
+  padding: 0 16px;
+  display:flex;
+  align-items:center;
+}
+.title {
+  font-weight: 700;
+  color: #fff;
+}
 .site-content { background: #fff; padding: 16px; min-height: calc(100vh - 160px); border-radius: 8px; }
 </style>
