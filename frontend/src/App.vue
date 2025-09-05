@@ -1,18 +1,60 @@
 <template>
   <a-layout style="min-height: 100vh">
-    <a-layout-header>
-      <div style="color:#fff;font-weight:600">Pressing Manager</div>
-    </a-layout-header>
-    <a-layout-content style="padding: 16px">
-      <router-view />
-    </a-layout-content>
+    <a-layout-sider :collapsible="true" v-model:collapsed="collapsed" breakpoint="lg">
+      <div class="logo">PM</div>
+      <a-menu theme="dark" mode="inline" :selectedKeys="[selectedKey]" @click="onMenuClick">
+        <a-menu-item key="/">Accueil</a-menu-item>
+        <a-menu-item key="/register">Enregistrer</a-menu-item>
+        <a-menu-item key="/item">Article</a-menu-item>
+        <a-menu-item key="/pending">En attente</a-menu-item>
+        <a-menu-item key="/owner">Par propriétaire</a-menu-item>
+        <a-menu-item key="/deadlines">Délais</a-menu-item>
+        <a-menu-item key="/stats">Statistiques</a-menu-item>
+        <a-menu-item key="/storage">Sauvegarde</a-menu-item>
+      </a-menu>
+    </a-layout-sider>
+    <a-layout>
+      <a-layout-header class="site-header">
+        <div class="title">Pressing Manager</div>
+      </a-layout-header>
+      <a-layout-content style="margin: 16px">
+        <a-breadcrumb style="margin-bottom: 12px">
+          <a-breadcrumb-item v-for="(c, idx) in crumbs" :key="idx">{{ c }}</a-breadcrumb-item>
+        </a-breadcrumb>
+        <div class="site-content">
+          <router-view />
+        </div>
+      </a-layout-content>
+    </a-layout>
   </a-layout>
   
 </template>
 
 <script setup lang="ts">
+import { computed, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+
+const router = useRouter()
+const route = useRoute()
+const collapsed = ref(false)
+
+const selectedKey = computed(() => route.path)
+const crumbs = computed(() => route.path.split('/').filter(Boolean).map(s => s.charAt(0).toUpperCase() + s.slice(1)) || ['Accueil'])
+
+function onMenuClick({ key }: { key: string }) {
+  if (key !== route.path) router.push(key)
+}
+
+watch(() => route.meta?.title as string | undefined, (title) => {
+  if (title) document.title = `${title} - Pressing Manager`
+  else document.title = 'Pressing Manager'
+}, { immediate: true })
 </script>
 
 <style>
 body { margin: 0; }
+.logo { height: 32px; margin: 16px; background: rgba(255,255,255,0.2); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; border-radius:4px; }
+.site-header { background: #fff; padding: 0 16px; display:flex; align-items:center; }
+.title { font-weight: 700; }
+.site-content { background: #fff; padding: 16px; min-height: calc(100vh - 160px); border-radius: 8px; }
 </style>

@@ -93,3 +93,18 @@ export async function getStats() {
   const total_revenue = items.filter(i => i.status === 'delivered').reduce((s, i) => s + (i.price || 0), 0)
   return { total_items, cleaned_items, delivered_items, pending_items, total_revenue }
 }
+
+export async function exportItems(): Promise<string> {
+  const items = await getAll()
+  return JSON.stringify({ version: 1, exported_at: new Date().toISOString(), items }, null, 2)
+}
+
+export async function importItems(json: string): Promise<void> {
+  const data = JSON.parse(json)
+  if (!data || !Array.isArray(data.items)) throw new Error('Invalid file')
+  await saveAll(data.items as ClothingItem[])
+}
+
+export async function clearItems(): Promise<void> {
+  await saveAll([])
+}
