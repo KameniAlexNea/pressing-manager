@@ -115,3 +115,12 @@ def item_to_dict(item):
         "image": getattr(item, "image", None),
         "amount_given": getattr(item, "amount_given", None),
     }
+
+
+def clear_items(db: Session):
+    db.query(models.ClothingItem).delete()
+    db.commit()
+
+
+def get_all_items(db: Session):
+    return db.query(models.ClothingItem).all()
