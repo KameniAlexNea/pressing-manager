@@ -3,7 +3,7 @@ import uuid
 from datetime import datetime
 
 import yaml
-from fastapi import APIRouter, Body, Depends, HTTPException, Query, Header
+from fastapi import APIRouter, Body, Depends, Header, HTTPException, Query
 from fastapi.responses import JSONResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -27,17 +27,21 @@ def get_current_user(authorization: str = Header(None)):
     """Verify Firebase token from Authorization header and return user info."""
     if not authorization:
         raise HTTPException(status_code=401, detail="Authorization header required")
-    
+
     # Extract token from "Bearer <token>"
     if not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Invalid authorization format")
-    
+
     token = authorization[7:]  # Remove "Bearer "
     decoded = verify_firebase_token(token)
     if not decoded:
         raise HTTPException(status_code=401, detail="Invalid Firebase token")
-    
-    return {"uid": decoded["uid"], "email": decoded.get("email"), "name": decoded.get("name")}
+
+    return {
+        "uid": decoded["uid"],
+        "email": decoded.get("email"),
+        "name": decoded.get("name"),
+    }
 
 
 # --- Auth Routes ---
@@ -51,7 +55,12 @@ def login(data: dict = Body(...)):
     if not decoded:
         raise HTTPException(status_code=401, detail="Invalid Firebase token")
     # You can add logic here to create a user in your DB if needed
-    return {"uid": decoded["uid"], "email": decoded.get("email"), "name": decoded.get("name"), "token": id_token}
+    return {
+        "uid": decoded["uid"],
+        "email": decoded.get("email"),
+        "name": decoded.get("name"),
+        "token": id_token,
+    }
 
 
 # --- Items CRUD ---
@@ -89,9 +98,9 @@ def create_item(
 
 @router.get("/items/{item_id}")
 def get_item(
-    item_id: str, 
+    item_id: str,
     current_user: dict = Depends(get_current_user),
-    db: Session = Depends(database.get_db)
+    db: Session = Depends(database.get_db),
 ):
     item = crud.get_item(db, item_id)
     if not item:
@@ -101,10 +110,10 @@ def get_item(
 
 @router.patch("/items/{item_id}/status")
 def update_status(
-    item_id: str, 
-    status: str = Body(...), 
+    item_id: str,
+    status: str = Body(...),
     current_user: dict = Depends(get_current_user),
-    db: Session = Depends(database.get_db)
+    db: Session = Depends(database.get_db),
 ):
     if status not in ("received", "cleaned", "delivered"):
         raise HTTPException(status_code=400, detail="Statut invalide")
@@ -117,9 +126,9 @@ def update_status(
 # --- Deadlines ---
 @router.get("/items/deadlines")
 def get_deadlines(
-    owner: str = Query(None), 
+    owner: str = Query(None),
     current_user: dict = Depends(get_current_user),
-    db: Session = Depends(database.get_db)
+    db: Session = Depends(database.get_db),
 ):
     items = crud.get_items_with_deadlines(db, owner if owner else None)
     now = datetime.now()
@@ -138,7 +147,7 @@ def get_deadlines(
 @router.get("/stats")
 def get_stats(
     current_user: dict = Depends(get_current_user),
-    db: Session = Depends(database.get_db)
+    db: Session = Depends(database.get_db),
 ):
     return crud.get_stats(db)
 
@@ -147,7 +156,7 @@ def get_stats(
 @router.get("/items/export")
 def export_items(
     current_user: dict = Depends(get_current_user),
-    db: Session = Depends(database.get_db)
+    db: Session = Depends(database.get_db),
 ):
     items = crud.get_all_items(db)
     return JSONResponse(content={"items": [crud.item_to_dict(i) for i in items]})
@@ -155,9 +164,9 @@ def export_items(
 
 @router.post("/items/import")
 def import_items(
-    data: dict = Body(...), 
+    data: dict = Body(...),
     current_user: dict = Depends(get_current_user),
-    db: Session = Depends(database.get_db)
+    db: Session = Depends(database.get_db),
 ):
     items = data.get("items", [])
     if not isinstance(items, list):
@@ -172,7 +181,7 @@ def import_items(
 @router.post("/items/clear")
 def clear_items(
     current_user: dict = Depends(get_current_user),
-    db: Session = Depends(database.get_db)
+    db: Session = Depends(database.get_db),
 ):
     crud.clear_items(db)
     return {"success": True}
