@@ -1,15 +1,15 @@
 
 <template>
-  <a-row :gutter="16" style="margin-bottom:24px">
-    <a-col :xs="24" :sm="12" :md="6" v-for="card in cards" :key="card.title">
-      <a-card :title="card.title" :bordered="false" style="text-align:center">
-        <div style="font-size:2em;font-weight:700">{{ card.value }}</div>
-        <div style="color:#888">{{ card.subtitle }}</div>
+  <a-row :gutter="[16, 16]">
+    <a-col :span="12" v-for="card in cards" :key="card.title">
+      <a-card :title="card.title" :bordered="false" class="stat-card">
+        <div class="stat-value">{{ card.value }}</div>
+        <div class="stat-subtitle">{{ card.subtitle }}</div>
       </a-card>
     </a-col>
   </a-row>
-  <a-row :gutter="16">
-    <a-col :xs="24">
+  <a-row :gutter="[16, 16]" style="margin-top: 24px">
+    <a-col :span="24">
       <a-card title="Articles par semaine" :bordered="false">
         <canvas ref="chart" height="220"></canvas>
       </a-card>
@@ -24,10 +24,10 @@ import { getStats, getAll } from '../store/items'
 import Chart from 'chart.js/auto'
 
 const cards = ref([
-  { title: 'Total', value: 0, subtitle: 'Articles enregistrés' },
-  { title: 'Nettoyés', value: 0, subtitle: 'Articles nettoyés' },
-  { title: 'Livrés', value: 0, subtitle: 'Articles livrés' },
-  { title: 'En attente', value: 0, subtitle: 'Articles en attente' },
+  { title: 'Total', value: 0, subtitle: 'Articles' },
+  { title: 'Nettoyés', value: 0, subtitle: 'Articles' },
+  { title: 'Livrés', value: 0, subtitle: 'Articles' },
+  { title: 'En attente', value: 0, subtitle: 'Articles' },
 ])
 
 const chart = ref<HTMLCanvasElement | null>(null)
@@ -80,3 +80,17 @@ onMounted(async () => {
   }
 })
 </script>
+
+<style scoped>
+.stat-card {
+  text-align: center;
+}
+.stat-value {
+  font-size: 2em;
+  font-weight: 700;
+}
+.stat-subtitle {
+  color: #888;
+  font-size: 0.9em;
+}
+</style>

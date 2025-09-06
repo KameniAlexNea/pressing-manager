@@ -78,7 +78,9 @@ export async function getPendingOlderThan(days: number): Promise<ClothingItem[]>
   return items.filter(i => i.status !== 'cleaned' && dayjs(i.date_received).isBefore(cutoff))
 }
 
-export async function getWithDeadlines(owner?: string): Promise<(ClothingItem & { days_left: number | null })[]> {
+export type ClothingItemWithDeadline = ClothingItem & { days_left: number | null };
+
+export async function getWithDeadlines(owner?: string): Promise<ClothingItemWithDeadline[]> {
   const items = await getAll()
   const list = items.filter(i => !!i.date_promised && (!owner || i.owner === owner.toUpperCase()))
   return list.map(i => ({

@@ -1,38 +1,72 @@
 <template>
-  <a-card title="Sauvegarde & Restauration">
+  <a-card title="Sauvegarde et Restauration" :bordered="false">
     <a-space direction="vertical" style="width:100%">
-      <a-alert type="info" show-icon message="Les données sont stockées localement sur cet appareil." />
+      <a-alert 
+        type="info" 
+        show-icon 
+        message="Gestion des données"
+        description="Les données sont stockées localement sur cet appareil. Vous pouvez les exporter pour les sauvegarder ou les transférer."
+      />
 
-      <a-space>
-        <a-button type="primary" @click="exportData">Exporter (JSON)</a-button>
-        <a-upload :before-upload="beforeUpload" :show-upload-list="false" accept="application/json,.json">
-          <a-button>Importer (JSON)</a-button>
-        </a-upload>
-        <a-popconfirm title="Effacer toutes les données locales ?" ok-text="Oui" cancel-text="Non" @confirm="clearAll">
-          <a-button danger>Tout effacer</a-button>
-        </a-popconfirm>
-      </a-space>
-
-      <a-alert v-if="message" :message="message" :type="messageType" show-icon />
+      <a-row :gutter="[16, 16]" style="margin-top: 24px;">
+        <a-col :span="24">
+          <a-button type="primary" block size="large" @click="exportData">
+            <template #icon><DownloadOutlined /></template>
+            Exporter les données
+          </a-button>
+        </a-col>
+        <a-col :span="24">
+          <a-upload 
+            :before-upload="beforeUpload" 
+            :show-upload-list="false" 
+            accept="application/json,.json"
+            customRequest="() => {}"
+          >
+            <a-button block size="large">
+              <template #icon><UploadOutlined /></template>
+              Importer les données
+            </a-button>
+          </a-upload>
+        </a-col>
+        <a-col :span="24">
+          <a-popconfirm 
+            title="Êtes-vous sûr de vouloir effacer toutes les données ?"
+            ok-text="Oui, tout effacer" 
+            cancel-text="Annuler" 
+            @confirm="clearAll"
+            placement="topRight"
+          >
+            <a-button danger block size="large">
+              <template #icon><DeleteOutlined /></template>
+              Effacer toutes les données
+            </a-button>
+          </a-popconfirm>
+        </a-col>
+      </a-row>
     </a-space>
   </a-card>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { message } from 'ant-design-vue';
 import { exportItems, importItems, clearItems } from '../store/items'
-
-const message = ref('')
-const messageType = ref<'success'|'error'|'info'|'warning'>('info')
+import { DownloadOutlined, UploadOutlined, DeleteOutlined } from '@ant-design/icons-vue'
 
 async function exportData() {
-  const blob = new Blob([await exportItems()], { type: 'application/json' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `pressing-data-${new Date().toISOString()}.json`
-  a.click()
-  URL.revokeObjectURL(url)
+  try {
+    const blob = new Blob([await exportItems()], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `pressing-manager-backup-${new Date().toISOString().split('T')[0]}.json`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+    message.success('Exportation réussie.');
+  } catch (error) {
+    message.error('Erreur lors de l\'exportation.');
+  }
 }
 
 function beforeUpload(file: File) {
@@ -40,11 +74,10 @@ function beforeUpload(file: File) {
   reader.onload = async () => {
     try {
       await importItems(String(reader.result))
-      message.value = 'Importation réussie.'
-      messageType.value = 'success'
+      message.success('Importation réussie. La page va être rechargée.');
+      setTimeout(() => window.location.reload(), 2000);
     } catch (e) {
-      message.value = 'Échec importation: fichier invalide.'
-      messageType.value = 'error'
+      message.error('Échec de l\'importation: le fichier est peut-être invalide.');
     }
   }
   reader.readAsText(file)
@@ -52,8 +85,12 @@ function beforeUpload(file: File) {
 }
 
 async function clearAll() {
-  await clearItems()
-  message.value = 'Toutes les données locales ont été effacées.'
-  messageType.value = 'warning'
+  try {
+    await clearItems()
+    message.warning('Toutes les données ont été effacées. La page va être rechargée.');
+    setTimeout(() => window.location.reload(), 2000);
+  } catch (error) {
+    message.error('Erreur lors de la suppression des données.');
+  }
 }
 </script>

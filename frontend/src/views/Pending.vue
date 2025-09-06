@@ -1,69 +1,76 @@
 <template>
-  <a-card title="Articles">
-    <a-tabs v-model:activeKey="statusTab" style="margin-bottom: 1em;">
+  <a-card title="Liste des Articles" :bordered="false">
+    <a-tabs v-model:activeKey="statusTab" centered>
       <a-tab-pane key="received" tab="Reçus" />
       <a-tab-pane key="cleaned" tab="Nettoyés" />
       <a-tab-pane key="delivered" tab="Livrés" />
     </a-tabs>
-    <a-space style="margin-bottom: 1em;">
-      <a-input-number v-model:value="days" :min="0" />
-      <a-button type="primary" @click="load">Rechercher</a-button>
-      <a-button :disabled="!selectedRowKeys.length" @click="batchMarkCleaned" v-if="statusTab === 'received'">Marquer
-        nettoyé</a-button>
-      <a-button :disabled="!selectedRowKeys.length" @click="batchMarkDelivered" v-if="statusTab === 'cleaned'">Marquer
-        livré</a-button>
-    </a-space>
-    <a-table :columns="columns" :data-source="rows" :row-key="'id'"
-      :row-selection="{ selectedRowKeys, onChange: onSelectChange }" style="margin-top:12px" />
+
+    <a-skeleton :loading="loading" active>
+      <a-list
+        item-layout="horizontal"
+        :data-source="rows"
+        :row-key="'id'"
+      >
+        <template #renderItem="{ item }">
+          <a-list-item>
+            <template #actions>
+              <a-button v-if="item.status === 'received'" type="primary" size="small" @click="markClean(item.id)">Nettoyé</a-button>
+              <a-button v-if="item.status === 'cleaned'" type="primary" size="small" @click="markDelivered(item.id)">Livré</a-button>
+              <a-button size="small" @click="viewItem(item.id)">Détails</a-button>
+            </template>
+            <a-list-item-meta>
+              <template #title>
+                <a>{{ item.owner }} - {{ item.id }}</a>
+              </template>
+              <template #description>
+                <p>{{ item.description }}</p>
+                Reçu le: {{ formatDate(item.date_received) }} | Promis pour le: {{ formatDate(item.date_promised) }}
+              </template>
+            </a-list-item-meta>
+          </a-list-item>
+        </template>
+      </a-list>
+      <a-empty v-if="!loading && rows.length === 0" description="Aucun article dans cette catégorie." />
+    </a-skeleton>
   </a-card>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { getAll, updateStatus } from '../store/items'
+import { ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
+import { getAll, updateStatus, type ClothingItem } from '../store/items'
+import dayjs from 'dayjs'
 
-const days = ref<number>(7)
+const router = useRouter()
 const statusTab = ref<'received' | 'cleaned' | 'delivered'>('received')
-const rows = ref<any[]>([])
-const selectedRowKeys = ref<string[]>([])
-const columns = [
-  { title: 'ID', dataIndex: 'id' },
-  { title: 'Description', dataIndex: 'description' },
-  { title: 'Propriétaire', dataIndex: 'owner' },
-  { title: 'Contact', dataIndex: 'contact' },
-  { title: 'Prix', dataIndex: 'price' },
-  { title: 'Statut', dataIndex: 'status' },
-  { title: 'Reçu', dataIndex: 'date_received' },
-  { title: 'Promis', dataIndex: 'date_promised' },
-]
-
-function onSelectChange(keys: string[]) {
-  selectedRowKeys.value = keys
-}
+const rows = ref<ClothingItem[]>([])
+const loading = ref(false)
 
 async function load() {
+  loading.value = true
   const all = await getAll()
-  rows.value = all.filter(i => i.status === statusTab.value && (!days.value || days.value === 0 || (i.date_received && i.date_received <= new Date(Date.now() - days.value * 24 * 60 * 60 * 1000).toISOString())))
-  selectedRowKeys.value = []
+  rows.value = all
+    .filter(i => i.status === statusTab.value)
+    .sort((a, b) => new Date(b.date_received).getTime() - new Date(a.date_received).getTime())
+  loading.value = false
 }
 
-async function batchMarkCleaned() {
-  for (const id of selectedRowKeys.value) {
-    await updateStatus(id, 'cleaned')
-  }
+async function updateAndRefresh(id: string, status: 'cleaned' | 'delivered') {
+  await updateStatus(id, status)
   await load()
 }
 
-async function batchMarkDelivered() {
-  for (const id of selectedRowKeys.value) {
-    await updateStatus(id, 'delivered')
-  }
-  await load()
+const markClean = (id: string) => updateAndRefresh(id, 'cleaned')
+const markDelivered = (id: string) => updateAndRefresh(id, 'delivered')
+
+function viewItem(id: string) {
+  router.push(`/item?id=${id}`)
 }
 
-load()
+function formatDate(date?: string | Date): string {
+  return date ? dayjs(date).format('DD/MM/YYYY') : 'N/A'
+}
 
-// Watch for tab change
-import { watch } from 'vue'
-watch(statusTab, load)
+watch(statusTab, load, { immediate: true })
 </script>

@@ -1,82 +1,82 @@
 <template>
   <a-layout style="min-height: 100vh">
-    <a-layout-sider
-      :collapsible="true"
-      v-model:collapsed="collapsed"
-      :collapsedWidth="0"
-      :breakpoint="'sm'"
-    >
-      <div class="logo">PM</div>
-      <a-menu theme="dark" mode="inline" :selectedKeys="[selectedKey]" @click="onMenuClick">
-        <a-menu-item key="/">
-          <template #icon><HomeOutlined /></template>
-          Accueil
-        </a-menu-item>
-        <a-menu-item key="/register">
-          <template #icon><PlusCircleOutlined /></template>
-          Enregistrer
-        </a-menu-item>
-        <a-menu-item key="/item">
-          <template #icon><SearchOutlined /></template>
-          Article
-        </a-menu-item>
-        <a-menu-item key="/pending">
-          <template #icon><ClockCircleOutlined /></template>
-          En attente
-        </a-menu-item>
-        <a-menu-item key="/owner">
-          <template #icon><UserOutlined /></template>
-          Par propriétaire
-        </a-menu-item>
-        <a-menu-item key="/deadlines">
-          <template #icon><CalendarOutlined /></template>
-          Délais
-        </a-menu-item>
-        <a-menu-item key="/stats">
-          <template #icon><BarChartOutlined /></template>
-          Statistiques
-        </a-menu-item>
-        <a-menu-item key="/storage">
-          <template #icon><DatabaseOutlined /></template>
-          Sauvegarde
-        </a-menu-item>
-        <a-menu-item key="/types">
-          <template #icon><DatabaseOutlined /></template>
-          Types
-        </a-menu-item>
-      </a-menu>
-    </a-layout-sider>
-    <a-layout>
-      <a-layout-header class="site-header">
-        <a-button class="menu-toggle" type="text" @click="collapsed = !collapsed">
-          <template #icon><span class="anticon"><svg viewBox="64 64 896 896" focusable="false" data-icon="menu" width="1em" height="1em" fill="currentColor" aria-hidden="true"><path d="M120 300h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm784 152H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 216H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8z"></path></svg></span></template>
-        </a-button>
-        <div class="title">Pressing Manager</div>
-      </a-layout-header>
-      <a-layout-content style="margin: 16px">
-        <a-breadcrumb style="margin-bottom: 12px">
-          <a-breadcrumb-item v-for="(c, idx) in crumbs" :key="idx">{{ c }}</a-breadcrumb-item>
-        </a-breadcrumb>
-        <div class="site-content">
-          <router-view />
-        </div>
-      </a-layout-content>
-    </a-layout>
+    <a-layout-header class="header">
+      <div class="title">{{ currentTitle }}</div>
+      <a-dropdown>
+        <a class="ant-dropdown-link" @click.prevent>
+          <MenuOutlined style="font-size: 20px; color: #fff" />
+        </a>
+        <template #overlay>
+          <a-menu @click="onMenuClick">
+            <a-menu-item key="/deadlines">
+              <template #icon><CalendarOutlined /></template>
+              Délais
+            </a-menu-item>
+            <a-menu-item key="/stats">
+              <template #icon><BarChartOutlined /></template>
+              Statistiques
+            </a-menu-item>
+            <a-menu-item key="/storage">
+              <template #icon><DatabaseOutlined /></template>
+              Sauvegarde
+            </a-menu-item>
+            <a-menu-item key="/types">
+              <template #icon><DatabaseOutlined /></template>
+              Types
+            </a-menu-item>
+             <a-menu-item key="/owner">
+              <template #icon><UserOutlined /></template>
+              Par propriétaire
+            </a-menu-item>
+            <a-menu-item key="/pending">
+              <template #icon><ClockCircleOutlined /></template>
+              En attente
+            </a-menu-item>
+          </a-menu>
+        </template>
+      </a-dropdown>
+    </a-layout-header>
+    <a-layout-content style="padding: 16px; margin-bottom: 56px;">
+      <router-view />
+    </a-layout-content>
+    <a-layout-footer class="footer">
+      <div class="tabs">
+        <router-link to="/" class="tab" active-class="active">
+          <HomeOutlined />
+          <span>Accueil</span>
+        </router-link>
+        <router-link to="/register" class="tab" active-class="active">
+          <PlusCircleOutlined />
+          <span>Enregistrer</span>
+        </router-link>
+        <router-link to="/item" class="tab" active-class="active">
+          <SearchOutlined />
+          <span>Article</span>
+        </router-link>
+      </div>
+    </a-layout-footer>
   </a-layout>
-  
 </template>
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { HomeOutlined, PlusCircleOutlined, SearchOutlined, ClockCircleOutlined, UserOutlined, CalendarOutlined, BarChartOutlined, DatabaseOutlined } from '@ant-design/icons-vue'
+import { 
+  HomeOutlined, 
+  PlusCircleOutlined, 
+  SearchOutlined, 
+  ClockCircleOutlined, 
+  UserOutlined, 
+  CalendarOutlined, 
+  BarChartOutlined, 
+  DatabaseOutlined,
+  MenuOutlined
+} from '@ant-design/icons-vue'
 
 const router = useRouter()
 const route = useRoute()
-const collapsed = ref(false)
 
-const selectedKey = computed(() => route.path)
-const crumbs = computed(() => route.path.split('/').filter(Boolean).map(s => s.charAt(0).toUpperCase() + s.slice(1)) || ['Accueil'])
+const currentTitle = computed(() => (route.meta?.title as string) || 'Pressing Manager')
 
 function onMenuClick({ key }: { key: string }) {
   if (key !== route.path) router.push(key)
@@ -92,48 +92,68 @@ watch(() => route.meta?.title as string | undefined, (title) => {
 body {
   margin: 0;
   font-family: 'Inter', 'Segoe UI', 'Arial', sans-serif;
-}
-.logo {
-  height: 32px;
-  margin: 16px;
-  background: rgba(255,255,255,0.2);
-  color:#fff;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-weight:700;
-  border-radius:4px;
-}
-.site-header {
-  background: #2a3f5f;
-  padding: 0 16px;
-  display: flex;
-  align-items: center;
-  box-shadow: 0 2px 8px rgba(42,63,95,0.08);
-}
-.title {
-  font-weight: 700;
-  color: #fff;
-  letter-spacing: 1px;
-  text-shadow: 0 1px 4px rgba(0,0,0,0.12);
-  font-family: 'Inter', 'Segoe UI', 'Arial', sans-serif;
-}
-.site-content {
-  color: #1a2233;
-  background: #fff;
-  padding: 16px;
-  min-height: calc(100vh - 160px);
-  border-radius: 8px;
+  background-color: #f0f2f5;
 }
 
-/* Mobile responsiveness */
-.menu-toggle { display: none; color: #fff; margin-right: 8px; }
-@media (max-width: 576px) {
-  .menu-toggle { display: inline-flex; }
-  .site-header { padding: 0 8px; }
-  .title { font-size: 16px; }
-  .site-content { padding: 12px; border-radius: 0; min-height: calc(100vh - 112px); }
-  .ant-layout-sider-children .logo { margin: 8px; }
-  .ant-layout { overflow-x: hidden; }
+.header {
+  background-color: #001529;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20px;
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 10;
+}
+
+.title {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.footer {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  background-color: #fff;
+  padding: 0;
+  z-index: 10;
+  border-top: 1px solid #f0f0f0;
+}
+
+.tabs {
+  display: flex;
+  justify-content: space-around;
+  height: 56px;
+}
+
+.tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-grow: 1;
+  color: #888;
+  text-decoration: none;
+  font-size: 12px;
+}
+
+.tab .anticon {
+  font-size: 20px;
+  margin-bottom: 4px;
+}
+
+.tab.active {
+  color: #1677ff;
+}
+
+.ant-layout-content {
+  margin-top: 64px; /* Height of header */
+  margin-bottom: 56px; /* Height of footer */
+  padding: 16px;
+  overflow-y: auto;
 }
 </style>
+
