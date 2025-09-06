@@ -38,13 +38,11 @@
 
           <div v-if="item.items && item.items.length" style="margin-top: 16px;">
             <strong>Articles :</strong>
-            <a-list size="small" :data-source="item.items" :render-item="(line, i) => ({ key: i })">
-              <template #renderItem="{ item: line }">
-                <a-list-item>
-                  {{ line.qty }} × {{ line.type }}
-                  <span v-if="line.notes" style="color: #888; margin-left: 8px;">({{ line.notes }})</span>
-                </a-list-item>
-              </template>
+            <a-list size="small">
+              <a-list-item v-for="(line, i) in item.items" :key="i">
+                {{ line.qty }} × {{ line.type }}
+                <span v-if="line.notes" style="color: #888; margin-left: 8px;">({{ line.notes }})</span>
+              </a-list-item>
             </a-list>
           </div>
 

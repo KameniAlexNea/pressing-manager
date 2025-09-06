@@ -7,6 +7,7 @@
             <a-select-option v-for="t in types" :key="t.id" :value="t.name">{{ t.name }}</a-select-option>
           </a-select>
           <a-input-number v-model:value="item.qty" :min="1" placeholder="Qté" style="flex: 1;" />
+          <a-input v-model:value="item.notes" placeholder="Note (code, couleur, etc.)" style="flex: 2;" />
           <a-button danger @click="removeItem(idx)" :disabled="form.items.length === 1">
             <template #icon>
               <DeleteOutlined />
@@ -139,6 +140,7 @@ const types = getTypes()
 type ItemLine = {
   type: string
   qty: number
+  notes?: string
 }
 type FormT = {
   items: ItemLine[]
@@ -191,7 +193,7 @@ async function onSubmit() {
     return;
   }
   const res = await createItem({
-    items: form.items.map(i => ({ ...i, notes: '' })), // notes not used in this form version
+    items: form.items.map(i => ({ type: i.type, qty: i.qty, notes: i.notes })),
     owner: form.owner,
     contact: form.contact,
     price: form.price,
