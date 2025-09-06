@@ -1,5 +1,10 @@
+import os
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
+
+# Load environment variables from .env.local
+load_dotenv('.env.local')
 
 from app import models
 from app.database import engine

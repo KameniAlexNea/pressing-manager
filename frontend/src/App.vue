@@ -1,6 +1,7 @@
 <template>
   <a-layout style="min-height: 100vh">
-    <a-layout-header class="header">
+    <!-- Only show header and footer if authenticated -->
+    <a-layout-header v-if="authStore.isAuthenticated" class="header">
       <div class="title">{{ currentTitle }}</div>
       <a-dropdown>
         <a class="ant-dropdown-link" @click.prevent>
@@ -44,14 +45,23 @@
               </template>
               En attente
             </a-menu-item>
+            <a-menu-divider />
+            <a-menu-item key="logout" @click="handleLogout">
+              <template #icon>
+                <LogoutOutlined />
+              </template>
+              Déconnexion
+            </a-menu-item>
           </a-menu>
         </template>
       </a-dropdown>
     </a-layout-header>
-    <a-layout-content style="padding: 16px; margin-bottom: 56px;">
+    
+    <a-layout-content :style="contentStyle">
       <router-view />
     </a-layout-content>
-    <a-layout-footer class="footer">
+    
+    <a-layout-footer v-if="authStore.isAuthenticated" class="footer">
       <div class="tabs">
         <router-link to="/" class="tab" active-class="active">
           <HomeOutlined />
@@ -71,8 +81,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useAuthStore } from './store/auth'
 import {
   HomeOutlined,
   PlusCircleOutlined,
@@ -82,17 +93,44 @@ import {
   CalendarOutlined,
   BarChartOutlined,
   DatabaseOutlined,
-  MenuOutlined
+  MenuOutlined,
+  LogoutOutlined
 } from '@ant-design/icons-vue'
 
 const router = useRouter()
 const route = useRoute()
+const authStore = useAuthStore()
 
 const currentTitle = computed(() => (route.meta?.title as string) || 'Pressing Manager')
 
+const contentStyle = computed(() => {
+  if (!authStore.isAuthenticated) {
+    return { padding: '16px' }
+  }
+  return { 
+    marginTop: '64px',
+    marginBottom: '72px',
+    padding: '16px',
+    overflowY: 'auto'
+  }
+})
+
 function onMenuClick({ key }: { key: string }) {
-  if (key !== route.path) router.push(key)
+  if (key === 'logout') {
+    handleLogout()
+  } else if (key !== route.path) {
+    router.push(key)
+  }
 }
+
+async function handleLogout() {
+  await authStore.logout()
+  router.push('/login')
+}
+
+onMounted(() => {
+  authStore.initAuth()
+})
 
 watch(() => route.meta?.title as string | undefined, (title) => {
   if (title) document.title = `${title} - Pressing Manager`
@@ -162,11 +200,6 @@ body {
 }
 
 .ant-layout-content {
-  margin-top: 64px;
-  /* Height of header */
-  margin-bottom: 72px;
-  /* Height of footer + extra space */
-  padding: 16px;
   overflow-y: auto;
 }
 </style>

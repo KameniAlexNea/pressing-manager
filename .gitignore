@@ -3,6 +3,17 @@ __pycache__/
 *.py[codz]
 *$py.class
 
+# Firebase credentials and environment files
+firebase_service_account.json
+firebase_service_account_*.json
+.env
+.env.local
+.env.production.local
+
+# Frontend environment files
+frontend/.env.local
+frontend/.env.production.local
+
 # C extensions
 *.so
 
@@ -202,6 +213,24 @@ cython_debug/
 .cursorindexingignore
 
 # Marimo
+.marimo_cache/
+
+# Node.js and Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/.DS_Store
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Firebase
+firebase_service_account*.json
+.firebase/
 marimo/_static/
 marimo/_lsp/
 __marimo__/

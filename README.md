@@ -1,6 +1,256 @@
-# Pressing Manager
+# Pressing Manager - Mobile Web App
 
-Efficient web application (FastAPI + SQLAlchemy + Bootstrap) to manage a dry-cleaning / pressing workflow: register clothing items, track status (received → cleaned → delivered), compute stats, view pending work, search by owner, and suggest storage based on configurable rules.
+A modern mobile web application for managing a dry cleaning business, built with Vue.js frontend and FastAPI backend, featuring Firebase authentication.
+
+## Features
+
+- **Dashboard**: Overview with statistics and charts
+- **Item Registration**: Register items with photos and details  
+- **Item Management**: Search, update status, track deadlines
+- **Owner Management**: View items by owner
+- **Statistics**: Revenue tracking and analytics
+- **Firebase Authentication**: Secure login/registration
+- **Mobile-First Design**: Responsive UI with Ant Design Vue
+
+## Technology Stack
+
+### Frontend
+- **Vue 3** with TypeScript and Composition API
+- **Ant Design Vue** for UI components
+- **Chart.js** for data visualization
+- **Pinia** for state management
+- **Vue Router** for navigation
+- **Firebase Auth** for authentication
+- **Vite** for development and building
+
+### Backend
+- **FastAPI** with Python 3.12
+- **SQLAlchemy** for database ORM
+- **SQLite** database
+- **Firebase Admin SDK** for token verification
+- **Uvicorn** ASGI server
+
+## Quick Start
+
+### Prerequisites
+- Node.js 18+ and npm
+- Python 3.12+
+- UV package manager (recommended) or pip
+
+### 1. Clone and Setup
+
+```bash
+git clone <your-repo>
+cd pressing-manager
+```
+
+### 2. Backend Setup
+
+```bash
+# Install dependencies
+uv sync
+# or with pip: pip install -r requirements.txt
+
+# Create static directory
+mkdir -p static
+
+# Start backend server
+uv run uvicorn main:app --reload
+# or: python -m uvicorn main:app --reload
+```
+
+Backend will be available at http://localhost:8000
+
+### 3. Frontend Setup
+
+```bash
+cd frontend
+
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+```
+
+Frontend will be available at http://localhost:5173
+
+### 4. Firebase Configuration (Required for Authentication)
+
+1. Create a Firebase project at https://console.firebase.google.com
+2. Enable Authentication with Email/Password provider
+3. Get your Firebase config from Project Settings > General
+4. Copy the frontend environment file:
+   ```bash
+   cd frontend
+   cp .env.example .env.local
+   ```
+5. Update `frontend/.env.local` with your Firebase configuration:
+   ```bash
+   VITE_FIREBASE_API_KEY=your_api_key
+   VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+   VITE_FIREBASE_PROJECT_ID=your_project_id
+   VITE_FIREBASE_STORAGE_BUCKET=your_project.firebasestorage.app
+   VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+   VITE_FIREBASE_APP_ID=your_app_id
+   VITE_FIREBASE_MEASUREMENT_ID=your_measurement_id
+   ```
+6. Generate a backend service account key:
+   - Go to Project Settings > Service Accounts
+   - Click "Generate new private key"
+   - Save as `firebase_service_account.json` in the project root
+
+**⚠️ Security Warning:** Never commit Firebase credentials to version control. The `.env.local` and `firebase_service_account.json` files are already excluded in `.gitignore`.
+
+## Development
+
+### Frontend Development
+```bash
+cd frontend
+npm run dev      # Development server
+npm run build    # Production build
+npm run preview  # Preview production build
+```
+
+### Backend Development
+```bash
+uv run uvicorn main:app --reload --port 8000
+# API documentation: http://localhost:8000/docs
+```
+
+### Project Structure
+
+```
+pressing-manager/
+├── frontend/                 # Vue.js frontend
+│   ├── src/
+│   │   ├── views/           # Page components
+│   │   ├── store/           # Pinia stores
+│   │   ├── router/          # Vue Router config
+│   │   └── firebase.ts      # Firebase config
+│   ├── package.json
+│   └── vite.config.ts
+├── app/                     # FastAPI backend
+│   ├── models.py           # Database models
+│   ├── routes.py           # API endpoints
+│   ├── crud.py             # Database operations
+│   ├── database.py         # Database config
+│   └── firebase_admin.py   # Firebase auth
+├── main.py                 # FastAPI app entry
+├── pyproject.toml          # Python dependencies
+└── firebase_service_account.json  # Firebase credentials
+```
+
+## API Endpoints
+
+### Authentication Required Endpoints
+- `GET /api/items` - Get all items
+- `POST /api/items` - Create new item  
+- `GET /api/items/{id}` - Get item by ID
+- `PATCH /api/items/{id}/status` - Update item status
+- `GET /api/items/deadlines` - Get items with deadlines
+- `GET /api/stats` - Get statistics
+
+### Authentication
+All API endpoints require a valid Firebase ID token in the Authorization header:
+```
+Authorization: Bearer <firebase-id-token>
+```
+
+## Database Schema
+
+### Items Table
+- `id`: Unique identifier
+- `owner`: Owner name (uppercase)
+- `price`: Item price
+- `status`: received/cleaned/delivered
+- `date_received`: Registration date
+- `date_cleaned`: Cleaning completion date
+- `date_delivered`: Delivery date
+- `date_promised`: Promised delivery date
+- `items`: JSON array of item lines
+- `description`: Item description
+- `notes`: Additional notes
+- `contact`: Contact information
+- `image`: Base64 encoded image
+- `amount_given`: Amount paid at registration
+
+## Mobile Features
+
+- **Responsive Design**: Optimized for mobile devices
+- **Bottom Navigation**: Easy thumb navigation
+- **Touch-Friendly**: Large buttons and touch targets
+- **Fast Loading**: Optimized bundle size
+- **Offline Support**: Local storage fallbacks
+
+## Deployment
+
+### Production Build
+```bash
+# Frontend
+cd frontend && npm run build
+
+# Backend  
+uv run uvicorn main:app --host 0.0.0.0 --port 8000
+```
+
+### Environment Variables
+- `FIREBASE_CRED_PATH`: Path to Firebase service account JSON
+
+## Security
+
+- Firebase Authentication with email/password
+- JWT token verification on all API endpoints  
+- CORS configured for frontend domain
+- Input validation and sanitization
+- SQL injection protection via SQLAlchemy ORM
+
+### Environment Variables Security
+
+**⚠️ Important**: Never commit sensitive credentials to version control.
+
+**Protected files (automatically ignored by Git):**
+- `frontend/.env.local` - Frontend Firebase configuration
+- `firebase_service_account.json` - Backend service account key
+- `.env` files in project root
+
+**For development:**
+1. Copy `frontend/.env.example` to `frontend/.env.local`
+2. Add your Firebase credentials to `.env.local`
+3. Download service account JSON to project root
+
+**For production:**
+- Use environment variables or secure secret management
+- Configure CI/CD with encrypted secrets
+- Never store credentials in code or config files
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Support
+
+For support or questions:
+- Create an issue on GitHub
+- Check the API documentation at `/docs` endpoint
+- Review the Firebase console for authentication issues
+
+## Roadmap
+
+- [ ] Push notifications
+- [ ] Barcode/QR code scanning  
+- [ ] Customer SMS notifications
+- [ ] Advanced reporting
+- [ ] Multi-location support
+- [ ] Print receipt functionality
 
 ## ✅ Features
 
