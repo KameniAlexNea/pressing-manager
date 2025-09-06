@@ -3,12 +3,12 @@
     <a-form @submit.prevent="load">
       <a-form-item>
         <a-input-search v-model:value="owner" placeholder="Entrez le nom du propriétaire" enter-button="Rechercher"
-          size="large" @search="load" />
+          size="large" @search="load" :loading="loading" :disabled="loading" aria-label="Recherche propriétaire" />
       </a-form-item>
     </a-form>
 
     <a-skeleton :loading="loading" active>
-      <a-list v-if="searched" item-layout="horizontal" :data-source="rows" :row-key="'id'">
+  <a-list v-if="searched" item-layout="horizontal" :data-source="rows" :row-key="'id'" :pagination="{ pageSize: 10, showSizeChanger: true, pageSizeOptions: ['5', '10', '20', '50'] }">
         <template #renderItem="{ item }">
           <a-list-item>
             <template #actions>
@@ -34,40 +34,44 @@
   </a-card>
 </template>
 
+
+
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
 import { getByOwner, type ClothingItem } from '../store/items'
-import dayjs from 'dayjs'
+import { useFormatting, useNavigation } from '../composables/useFormatting'
+import { message } from 'ant-design-vue'
+
 
 const owner = ref('')
 const rows = ref<ClothingItem[]>([])
 const loading = ref(false)
 const searched = ref(false)
-const router = useRouter()
+const { formatDate, statusColor } = useFormatting()
+const { goToItem } = useNavigation()
 
 async function load() {
-  if (!owner.value) return
+  if (!owner.value) {
+    message.warning('Veuillez entrer le nom du propriétaire.')
+    return
+  }
   loading.value = true
   searched.value = true
-  rows.value = await getByOwner(owner.value)
-  loading.value = false
+  try {
+    rows.value = await getByOwner(owner.value)
+    if (rows.value.length === 0) {
+      message.info('Aucun article trouvé pour ce propriétaire.')
+    }
+  } catch (e) {
+    message.error('Erreur lors de la recherche.')
+  } finally {
+    loading.value = false
+  }
 }
 
 function viewItem(id: string) {
-  router.push(`/item?id=${id}`)
+  goToItem(id)
 }
 
-function formatDate(date?: string | Date): string {
-  return date ? dayjs(date).format('DD/MM/YYYY') : 'N/A'
-}
 
-function statusColor(status: string) {
-  switch (status) {
-    case 'received': return 'blue';
-    case 'cleaned': return 'orange';
-    case 'delivered': return 'green';
-    default: return 'default';
-  }
-}
 </script>

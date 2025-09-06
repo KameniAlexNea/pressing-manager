@@ -3,7 +3,7 @@
     <a-form @submit.prevent="load">
       <a-form-item>
         <a-input-search v-model:value="owner" placeholder="Filtrer par propriétaire (optionnel)"
-          enter-button="Rechercher" @search="load" />
+          enter-button="Rechercher" @search="load" :loading="loading" :disabled="loading" aria-label="Filtrer par propriétaire" />
       </a-form-item>
     </a-form>
 
@@ -35,30 +35,40 @@
   </a-card>
 </template>
 
+
+
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
 import { getWithDeadlines, type ClothingItemWithDeadline } from '../store/items'
-import dayjs from 'dayjs'
+import { useFormatting, useNavigation } from '../composables/useFormatting'
+import { message } from 'ant-design-vue'
+
 
 const owner = ref('')
 const rows = ref<ClothingItemWithDeadline[]>([])
 const loading = ref(false)
-const router = useRouter()
+const { formatDate } = useFormatting()
+const { goToItem } = useNavigation()
 
 async function load() {
   loading.value = true
-  rows.value = await getWithDeadlines(owner.value || undefined)
-  loading.value = false
+  try {
+    rows.value = await getWithDeadlines(owner.value || undefined)
+    if (rows.value.length === 0) {
+      message.info('Aucun délai à suivre.')
+    }
+  } catch (e) {
+    message.error('Erreur lors du chargement des délais.')
+  } finally {
+    loading.value = false
+  }
 }
 
 function viewItem(id: string) {
-  router.push(`/item?id=${id}`)
+  goToItem(id)
 }
 
-function formatDate(date?: string | Date): string {
-  return date ? dayjs(date).format('DD/MM/YYYY') : 'N/A'
-}
+
 
 function rowClass(record: any) {
   if (record.days_left == null) return ''

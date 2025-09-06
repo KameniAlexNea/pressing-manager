@@ -3,7 +3,7 @@
     <a-form @submit.prevent="lookup">
       <a-form-item>
         <a-input-search v-model:value="code" placeholder="Entrez le code de l'article" enter-button="Rechercher"
-          size="large" @search="lookup" />
+          size="large" @search="lookup" :loading="loading" :disabled="loading" aria-label="Recherche code article" />
       </a-form-item>
     </a-form>
 
@@ -47,10 +47,8 @@
           </div>
 
           <a-space style="margin-top: 16px; width: 100%; justify-content: center;">
-            <a-button v-if="item.status === 'received'" type="primary" @click="markClean" size="large">Marquer comme
-              Nettoyé</a-button>
-            <a-button v-if="item.status === 'cleaned'" type="primary" @click="markDelivered" size="large">Marquer comme
-              Livré</a-button>
+            <a-button v-if="item.status === 'received'" type="primary" @click="markClean" size="large" :loading="loading" :disabled="loading" aria-label="Marquer comme nettoyé">Marquer comme Nettoyé</a-button>
+            <a-button v-if="item.status === 'cleaned'" type="primary" @click="markDelivered" size="large" :loading="loading" :disabled="loading" aria-label="Marquer comme livré">Marquer comme Livré</a-button>
           </a-space>
         </a-card>
       </div>
@@ -59,17 +57,21 @@
   </a-card>
 </template>
 
+
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { getById, updateStatus, type ClothingItem } from '../store/items'
-import dayjs from 'dayjs'
+import { getById, updateStatus, type ClothingItem, type ItemLine } from '../store/items'
+import { useFormatting } from '../composables/useFormatting'
+import { message } from 'ant-design-vue'
+
 
 const code = ref('')
 const item = ref<ClothingItem | undefined>()
 const loading = ref(false)
 const searched = ref(false)
 const route = useRoute()
+const { formatDate, statusColor } = useFormatting()
 
 onMounted(() => {
   if (route.query.id && typeof route.query.id === 'string') {
@@ -82,17 +84,33 @@ async function lookup() {
   if (!code.value) return;
   loading.value = true
   searched.value = true
-  item.value = await getById(code.value)
-  loading.value = false
+  try {
+    item.value = await getById(code.value)
+    if (!item.value) {
+      message.warning("Aucun article trouvé pour ce code.")
+    }
+  } catch (e) {
+    message.error("Erreur lors de la recherche de l'article.")
+  } finally {
+    loading.value = false
+  }
 }
 
 async function updateAndRefresh(id: string, status: 'cleaned' | 'delivered') {
   loading.value = true;
-  const updatedItem = await updateStatus(id, status);
-  if (updatedItem) {
-    item.value = updatedItem;
+  try {
+    const updatedItem = await updateStatus(id, status);
+    if (updatedItem) {
+      item.value = updatedItem;
+      message.success(status === 'cleaned' ? 'Article marqué comme nettoyé.' : 'Article marqué comme livré.')
+    } else {
+      message.error("Impossible de mettre à jour l'article.")
+    }
+  } catch (e) {
+    message.error("Erreur lors de la mise à jour du statut.")
+  } finally {
+    loading.value = false;
   }
-  loading.value = false;
 }
 
 async function markClean() {
@@ -105,18 +123,7 @@ async function markDelivered() {
   await updateAndRefresh(item.value.id, 'delivered');
 }
 
-function formatDate(date?: string | Date): string {
-  return date ? dayjs(date).format('DD/MM/YYYY HH:mm') : 'N/A'
-}
 
-function statusColor(status: string) {
-  switch (status) {
-    case 'received': return 'blue';
-    case 'cleaned': return 'orange';
-    case 'delivered': return 'green';
-    default: return 'default';
-  }
-}
 </script>
 
 <style scoped>

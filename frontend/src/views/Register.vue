@@ -3,12 +3,12 @@
     <a-form layout="vertical" @submit.prevent="onSubmit">
       <a-form-item label="Articles">
         <div v-for="(item, idx) in form.items" :key="idx" class="item-row">
-          <a-select v-model:value="item.type" placeholder="Type" style="flex: 2;">
+          <a-select v-model:value="item.type" placeholder="Type" style="flex: 2;" :aria-label="`Type d'article ligne ${idx+1}`">
             <a-select-option v-for="t in types" :key="t.id" :value="t.name">{{ t.name }}</a-select-option>
           </a-select>
-          <a-input-number v-model:value="item.qty" :min="1" placeholder="Qté" style="flex: 1;" />
-          <a-input v-model:value="item.notes" placeholder="Note (code, couleur, etc.)" style="flex: 2;" />
-          <a-button danger @click="removeItem(idx)" :disabled="form.items.length === 1">
+          <a-input-number v-model:value="item.qty" :min="1" placeholder="Qté" style="flex: 1;" :aria-label="`Quantité ligne ${idx+1}`" />
+          <a-input v-model:value="item.notes" placeholder="Note (code, couleur, etc.)" style="flex: 2;" :aria-label="`Note ligne ${idx+1}`" />
+          <a-button danger @click="removeItem(idx)" :disabled="form.items.length === 1" :aria-label="`Supprimer ligne ${idx+1}`">
             <template #icon>
               <DeleteOutlined />
             </template>
@@ -24,20 +24,21 @@
 
       <a-form-item label="Propriétaire"
         :rules="[{ required: true, message: 'Veuillez entrer le nom du propriétaire' }]">
-        <a-input v-model:value="form.owner" />
+        <a-input v-model:value="form.owner" aria-label="Nom du propriétaire" />
       </a-form-item>
 
-      <a-form-item label="Contact (+237...)">
-        <a-input v-model:value="form.contact" />
+      <a-form-item label="Contact (+237...)"
+        :rules="[{ required: true, message: 'Veuillez entrer un numéro de contact' }]">
+        <a-input v-model:value="form.contact" aria-label="Numéro de contact" />
       </a-form-item>
 
-      <a-form-item label="Prix" :rules="[{ required: true, message: 'Veuillez entrer un prix' }]">
-        <a-input-number v-model:value="form.price" :min="0" style="width:100%" addon-after="FCFA" />
+      <a-form-item label="Prix" :rules="[{ required: true, message: 'Veuillez entrer un prix' }, { type: 'number', min: 1, message: 'Le prix doit être supérieur à 0' }]">
+        <a-input-number v-model:value="form.price" :min="1" style="width:100%" addon-after="FCFA" aria-label="Prix" />
       </a-form-item>
 
       <a-form-item label="Montant donné">
         <a-input-number v-model:value="form.amountGiven" :min="0" style="width:100%" addon-after="FCFA"
-          @change="calcChange" />
+          @change="calcChange" aria-label="Montant donné" />
         <div v-if="change > 0" style="margin-top: 8px; color: green;">
           Monnaie à rendre : <strong>{{ change }} FCFA</strong>
         </div>
@@ -57,7 +58,7 @@
       </a-row>
 
       <a-form-item label="Notes">
-        <a-textarea v-model:value="form.notes" rows="3" />
+        <a-textarea v-model:value="form.notes" rows="3" aria-label="Notes générales" />
       </a-form-item>
 
       <a-form-item label="Photo (optionnelle)">
@@ -73,7 +74,7 @@
         </a-modal>
       </a-form-item>
 
-      <a-button type="primary" html-type="submit" block size="large">Enregistrer</a-button>
+  <a-button type="primary" html-type="submit" block size="large" :loading="loading" :disabled="loading">Enregistrer</a-button>
     </a-form>
 
     <a-modal v-model:open="showSuccessModal" title="Enregistrement réussi" @ok="resetForm">
@@ -86,7 +87,7 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
 import dayjs, { Dayjs } from 'dayjs'
-import { createItem } from '../store/items'
+import { createItem, type ItemLine } from '../store/items'
 import { getTypes } from '../store/types'
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons-vue'
 import type { UploadFile, UploadChangeParam } from 'ant-design-vue';
@@ -137,11 +138,6 @@ function onImageChange({ file, fileList: newFileList }: UploadChangeParam) {
 // Clothing types
 const types = getTypes()
 
-type ItemLine = {
-  type: string
-  qty: number
-  notes?: string
-}
 type FormT = {
   items: ItemLine[]
   owner: string
@@ -186,25 +182,37 @@ function calcChange() {
 
 const savedId = ref<string>('')
 const showSuccessModal = ref(false)
+const loading = ref(false)
+
+import { message } from 'ant-design-vue'
 
 async function onSubmit() {
+  if (loading.value) return;
   if (!form.owner || form.price <= 0) {
-    // Basic validation
+    message.warning('Veuillez remplir tous les champs obligatoires.')
     return;
   }
-  const res = await createItem({
-    items: form.items.map(i => ({ type: i.type, qty: i.qty, notes: i.notes })),
-    owner: form.owner,
-    contact: form.contact,
-    price: form.price,
-    date_received: form.date_received?.toISOString(),
-    date_promised: form.date_promised?.toISOString(),
-    notes: form.notes,
-    image: imageDataUrl.value || undefined,
-    amountGiven: form.amountGiven,
-  })
-  savedId.value = res.id
-  showSuccessModal.value = true
+  loading.value = true;
+  try {
+    const res = await createItem({
+      items: form.items.map(i => ({ type: i.type, qty: i.qty, notes: i.notes })),
+      owner: form.owner,
+      contact: form.contact,
+      price: form.price,
+      date_received: form.date_received?.toISOString(),
+      date_promised: form.date_promised?.toISOString(),
+      notes: form.notes,
+      image: imageDataUrl.value || undefined,
+      amountGiven: form.amountGiven,
+    })
+    savedId.value = res.id
+    showSuccessModal.value = true
+    message.success('Article enregistré avec succès.')
+  } catch (e) {
+    message.error("Erreur lors de l'enregistrement de l'article.")
+  } finally {
+    loading.value = false;
+  }
 }
 
 function resetForm() {
