@@ -1,6 +1,5 @@
 import localforage from 'localforage'
 import dayjs from 'dayjs'
-import { v4 as uuidv4 } from 'uuid'
 
 export type ItemLine = {
   type: string
@@ -41,8 +40,18 @@ async function saveAll(items: ClothingItem[]): Promise<void> {
 
 export async function createItem(data: Partial<ClothingItem>): Promise<ClothingItem> {
   const all = await getAll()
+
+  const generateUniqueId = (existingIds: string[]): string => {
+    let newId: string;
+    do {
+      // Generates a 6-digit number as a string
+      newId = String(Math.floor(100000 + Math.random() * 900000));
+    } while (existingIds.includes(newId));
+    return newId;
+  }
+
   const item: ClothingItem = {
-    id: uuidv4(),
+    id: generateUniqueId(all.map(i => i.id)),
     items: data.items || [],
     description: data.description || '',
     owner: (data.owner || '').toUpperCase(),

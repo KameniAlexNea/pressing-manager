@@ -164,8 +164,8 @@ body {
 .ant-layout-content {
   margin-top: 64px;
   /* Height of header */
-  margin-bottom: 56px;
-  /* Height of footer */
+  margin-bottom: 72px;
+  /* Height of footer + extra space */
   padding: 16px;
   overflow-y: auto;
 }
