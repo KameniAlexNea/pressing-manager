@@ -62,7 +62,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { getById, updateStatus, type ClothingItem } from '../store/items'
 import dayjs from 'dayjs'
 
@@ -70,6 +71,14 @@ const code = ref('')
 const item = ref<ClothingItem | undefined>()
 const loading = ref(false)
 const searched = ref(false)
+const route = useRoute()
+
+onMounted(() => {
+  if (route.query.id && typeof route.query.id === 'string') {
+    code.value = route.query.id
+    lookup()
+  }
+})
 
 async function lookup() {
   if (!code.value) return;
