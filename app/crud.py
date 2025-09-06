@@ -92,3 +92,26 @@ def get_stats(db: Session):
         "pending_items": pending_items,
         "total_revenue": total_revenue,
     }
+
+
+def item_to_dict(item):
+    if not item:
+        return None
+    return {
+        "id": item.id,
+        "items": item.items,
+        "description": item.description,
+        "owner": item.owner,
+        "price": item.price,
+        "status": item.status,
+        "date_received": item.date_received.isoformat() if item.date_received else None,
+        "date_cleaned": item.date_cleaned.isoformat() if item.date_cleaned else None,
+        "date_delivered": (
+            item.date_delivered.isoformat() if item.date_delivered else None
+        ),
+        "notes": item.notes,
+        "contact": item.contact,
+        "date_promised": item.date_promised.isoformat() if item.date_promised else None,
+        "image": getattr(item, "image", None),
+        "amount_given": getattr(item, "amount_given", None),
+    }
