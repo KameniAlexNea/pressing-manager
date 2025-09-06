@@ -6,7 +6,9 @@
       </a-form-item>
       <a-form-item>
         <a-button type="primary" html-type="submit" :disabled="!newType.trim()">
-          <template #icon><PlusOutlined /></template>
+          <template #icon>
+            <PlusOutlined />
+          </template>
           Ajouter
         </a-button>
       </a-form-item>
@@ -17,28 +19,23 @@
         <a-list-item>
           <a-list-item-meta>
             <template #title>
-              <a-input 
-                v-if="editingId === item.id" 
-                v-model:value="editingName" 
-                @pressEnter="() => onEdit(item)"
-                @blur="() => onEdit(item)"
-                ref="editingInput"
-              />
+              <a-input v-if="editingId === item.id" v-model:value="editingName" @pressEnter="() => onEdit(item)"
+                @blur="() => onEdit(item)" ref="editingInput" />
               <span v-else>{{ item.name }}</span>
             </template>
           </a-list-item-meta>
           <template #actions>
             <a-button type="text" @click="() => startEditing(item)">
-              <template #icon><EditOutlined /></template>
+              <template #icon>
+                <EditOutlined />
+              </template>
             </a-button>
-            <a-popconfirm
-              title="Êtes-vous sûr de vouloir supprimer ce type ?"
-              ok-text="Oui"
-              cancel-text="Non"
-              @confirm="() => remove(item.id)"
-            >
+            <a-popconfirm title="Êtes-vous sûr de vouloir supprimer ce type ?" ok-text="Oui" cancel-text="Non"
+              @confirm="() => remove(item.id)">
               <a-button type="text" danger>
-                <template #icon><DeleteOutlined /></template>
+                <template #icon>
+                  <DeleteOutlined />
+                </template>
               </a-button>
             </a-popconfirm>
           </template>
@@ -46,15 +43,12 @@
       </template>
     </a-list>
 
-    <a-popconfirm
-      title="Réinitialiser la liste aux types par défaut ?"
-      description="Cette action est irréversible."
-      ok-text="Oui, réinitialiser"
-      cancel-text="Annuler"
-      @confirm="reset"
-    >
+    <a-popconfirm title="Réinitialiser la liste aux types par défaut ?" description="Cette action est irréversible."
+      ok-text="Oui, réinitialiser" cancel-text="Annuler" @confirm="reset">
       <a-button danger style="margin-top: 24px;">
-        <template #icon><ReloadOutlined /></template>
+        <template #icon>
+          <ReloadOutlined />
+        </template>
         Réinitialiser les types
       </a-button>
     </a-popconfirm>

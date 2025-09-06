@@ -2,21 +2,13 @@
   <a-card title="Suivi des Délais" :bordered="false">
     <a-form @submit.prevent="load">
       <a-form-item>
-        <a-input-search
-          v-model:value="owner"
-          placeholder="Filtrer par propriétaire (optionnel)"
-          enter-button="Rechercher"
-          @search="load"
-        />
+        <a-input-search v-model:value="owner" placeholder="Filtrer par propriétaire (optionnel)"
+          enter-button="Rechercher" @search="load" />
       </a-form-item>
     </a-form>
 
     <a-skeleton :loading="loading" active>
-      <a-list
-        item-layout="horizontal"
-        :data-source="rows"
-        :row-key="'id'"
-      >
+      <a-list item-layout="horizontal" :data-source="rows" :row-key="'id'">
         <template #renderItem="{ item }">
           <a-list-item :class="rowClass(item)">
             <template #actions>
@@ -97,6 +89,7 @@ load()
 .deadline-late {
   background-color: #fff1f0;
 }
+
 .deadline-soon {
   background-color: #fffbe6;
 }

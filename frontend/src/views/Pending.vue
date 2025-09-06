@@ -7,16 +7,14 @@
     </a-tabs>
 
     <a-skeleton :loading="loading" active>
-      <a-list
-        item-layout="horizontal"
-        :data-source="rows"
-        :row-key="'id'"
-      >
+      <a-list item-layout="horizontal" :data-source="rows" :row-key="'id'">
         <template #renderItem="{ item }">
           <a-list-item>
             <template #actions>
-              <a-button v-if="item.status === 'received'" type="primary" size="small" @click="markClean(item.id)">Nettoyé</a-button>
-              <a-button v-if="item.status === 'cleaned'" type="primary" size="small" @click="markDelivered(item.id)">Livré</a-button>
+              <a-button v-if="item.status === 'received'" type="primary" size="small"
+                @click="markClean(item.id)">Nettoyé</a-button>
+              <a-button v-if="item.status === 'cleaned'" type="primary" size="small"
+                @click="markDelivered(item.id)">Livré</a-button>
               <a-button size="small" @click="viewItem(item.id)">Détails</a-button>
             </template>
             <a-list-item-meta>

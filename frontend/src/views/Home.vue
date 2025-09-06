@@ -1,4 +1,3 @@
-
 <template>
   <a-row :gutter="[16, 16]">
     <a-col :span="12" v-for="card in cards" :key="card.title">
@@ -54,7 +53,7 @@ onMounted(async () => {
       const d = new Date(item.date_received)
       return d >= weekStart && d < weekEnd
     }).length
-    const weekLabel = `${weekStart.getDate().toString().padStart(2, '0')}/${(weekStart.getMonth()+1).toString().padStart(2, '0')}`
+    const weekLabel = `${weekStart.getDate().toString().padStart(2, '0')}/${(weekStart.getMonth() + 1).toString().padStart(2, '0')}`
     weeks.push(weekLabel)
     data.push(count)
   }
@@ -85,10 +84,12 @@ onMounted(async () => {
 .stat-card {
   text-align: center;
 }
+
 .stat-value {
   font-size: 2em;
   font-weight: 700;
 }
+
 .stat-subtitle {
   color: #888;
   font-size: 0.9em;

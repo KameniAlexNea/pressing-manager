@@ -33,6 +33,7 @@ onMounted(async () => {
   text-align: center;
   background-color: #f0f2f5;
 }
+
 .stat-value {
   font-size: 1.8em;
   font-weight: 700;

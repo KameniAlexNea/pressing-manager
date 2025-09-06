@@ -9,27 +9,39 @@
         <template #overlay>
           <a-menu @click="onMenuClick">
             <a-menu-item key="/deadlines">
-              <template #icon><CalendarOutlined /></template>
+              <template #icon>
+                <CalendarOutlined />
+              </template>
               Délais
             </a-menu-item>
             <a-menu-item key="/stats">
-              <template #icon><BarChartOutlined /></template>
+              <template #icon>
+                <BarChartOutlined />
+              </template>
               Statistiques
             </a-menu-item>
             <a-menu-item key="/storage">
-              <template #icon><DatabaseOutlined /></template>
+              <template #icon>
+                <DatabaseOutlined />
+              </template>
               Sauvegarde
             </a-menu-item>
             <a-menu-item key="/types">
-              <template #icon><DatabaseOutlined /></template>
+              <template #icon>
+                <DatabaseOutlined />
+              </template>
               Types
             </a-menu-item>
-             <a-menu-item key="/owner">
-              <template #icon><UserOutlined /></template>
+            <a-menu-item key="/owner">
+              <template #icon>
+                <UserOutlined />
+              </template>
               Par propriétaire
             </a-menu-item>
             <a-menu-item key="/pending">
-              <template #icon><ClockCircleOutlined /></template>
+              <template #icon>
+                <ClockCircleOutlined />
+              </template>
               En attente
             </a-menu-item>
           </a-menu>
@@ -61,14 +73,14 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { 
-  HomeOutlined, 
-  PlusCircleOutlined, 
-  SearchOutlined, 
-  ClockCircleOutlined, 
-  UserOutlined, 
-  CalendarOutlined, 
-  BarChartOutlined, 
+import {
+  HomeOutlined,
+  PlusCircleOutlined,
+  SearchOutlined,
+  ClockCircleOutlined,
+  UserOutlined,
+  CalendarOutlined,
+  BarChartOutlined,
   DatabaseOutlined,
   MenuOutlined
 } from '@ant-design/icons-vue'
@@ -150,10 +162,11 @@ body {
 }
 
 .ant-layout-content {
-  margin-top: 64px; /* Height of header */
-  margin-bottom: 56px; /* Height of footer */
+  margin-top: 64px;
+  /* Height of header */
+  margin-bottom: 56px;
+  /* Height of footer */
   padding: 16px;
   overflow-y: auto;
 }
 </style>
-

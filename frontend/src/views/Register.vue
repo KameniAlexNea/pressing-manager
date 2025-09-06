@@ -8,16 +8,21 @@
           </a-select>
           <a-input-number v-model:value="item.qty" :min="1" placeholder="Qté" style="flex: 1;" />
           <a-button danger @click="removeItem(idx)" :disabled="form.items.length === 1">
-            <template #icon><DeleteOutlined /></template>
+            <template #icon>
+              <DeleteOutlined />
+            </template>
           </a-button>
         </div>
         <a-button type="dashed" block @click="addItem" style="margin-top: 8px;">
-          <template #icon><PlusOutlined /></template>
+          <template #icon>
+            <PlusOutlined />
+          </template>
           Ajouter un article
         </a-button>
       </a-form-item>
 
-      <a-form-item label="Propriétaire" :rules="[{ required: true, message: 'Veuillez entrer le nom du propriétaire' }]">
+      <a-form-item label="Propriétaire"
+        :rules="[{ required: true, message: 'Veuillez entrer le nom du propriétaire' }]">
         <a-input v-model:value="form.owner" />
       </a-form-item>
 
@@ -30,7 +35,8 @@
       </a-form-item>
 
       <a-form-item label="Montant donné">
-        <a-input-number v-model:value="form.amountGiven" :min="0" style="width:100%" addon-after="FCFA" @change="calcChange" />
+        <a-input-number v-model:value="form.amountGiven" :min="0" style="width:100%" addon-after="FCFA"
+          @change="calcChange" />
         <div v-if="change > 0" style="margin-top: 8px; color: green;">
           Monnaie à rendre : <strong>{{ change }} FCFA</strong>
         </div>
@@ -54,13 +60,8 @@
       </a-form-item>
 
       <a-form-item label="Photo (optionnelle)">
-        <a-upload
-          v-model:file-list="fileList"
-          list-type="picture-card"
-          :before-upload="() => false"
-          @preview="handlePreview"
-          @change="onImageChange"
-        >
+        <a-upload v-model:file-list="fileList" list-type="picture-card" :before-upload="() => false"
+          @preview="handlePreview" @change="onImageChange">
           <div v-if="fileList.length < 1">
             <PlusOutlined />
             <div style="margin-top: 8px">Upload</div>
@@ -73,7 +74,7 @@
 
       <a-button type="primary" html-type="submit" block size="large">Enregistrer</a-button>
     </a-form>
-    
+
     <a-modal v-model:open="showSuccessModal" title="Enregistrement réussi" @ok="resetForm">
       <p>L'article a été enregistré avec succès.</p>
       <p>Code de l'article : <strong>{{ savedId }}</strong></p>
@@ -94,7 +95,7 @@ const previewVisible = ref(false);
 const previewImage = ref('');
 const previewTitle = ref('');
 const fileList = ref<UploadFile[]>([]);
-const imageDataUrl = ref<string|null>(null)
+const imageDataUrl = ref<string | null>(null)
 
 const handleCancel = () => {
   previewVisible.value = false;
@@ -152,7 +153,7 @@ type FormT = {
 
 const defaultPromisedDays = 7
 const createDefaultFormState = (): FormT => ({
-  items: [ { type: types[0]?.name || '', qty: 1 } ],
+  items: [{ type: types[0]?.name || '', qty: 1 }],
   owner: '',
   contact: '',
   price: 0,
@@ -190,7 +191,7 @@ async function onSubmit() {
     return;
   }
   const res = await createItem({
-    items: form.items.map(i => ({...i, notes: ''})), // notes not used in this form version
+    items: form.items.map(i => ({ ...i, notes: '' })), // notes not used in this form version
     owner: form.owner,
     contact: form.contact,
     price: form.price,

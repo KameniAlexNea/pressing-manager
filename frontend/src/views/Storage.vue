@@ -1,43 +1,36 @@
 <template>
   <a-card title="Sauvegarde et Restauration" :bordered="false">
     <a-space direction="vertical" style="width:100%">
-      <a-alert 
-        type="info" 
-        show-icon 
-        message="Gestion des données"
-        description="Les données sont stockées localement sur cet appareil. Vous pouvez les exporter pour les sauvegarder ou les transférer."
-      />
+      <a-alert type="info" show-icon message="Gestion des données"
+        description="Les données sont stockées localement sur cet appareil. Vous pouvez les exporter pour les sauvegarder ou les transférer." />
 
       <a-row :gutter="[16, 16]" style="margin-top: 24px;">
         <a-col :span="24">
           <a-button type="primary" block size="large" @click="exportData">
-            <template #icon><DownloadOutlined /></template>
+            <template #icon>
+              <DownloadOutlined />
+            </template>
             Exporter les données
           </a-button>
         </a-col>
         <a-col :span="24">
-          <a-upload 
-            :before-upload="beforeUpload" 
-            :show-upload-list="false" 
-            accept="application/json,.json"
-            customRequest="() => {}"
-          >
+          <a-upload :before-upload="beforeUpload" :show-upload-list="false" accept="application/json,.json"
+            customRequest="() => {}">
             <a-button block size="large">
-              <template #icon><UploadOutlined /></template>
+              <template #icon>
+                <UploadOutlined />
+              </template>
               Importer les données
             </a-button>
           </a-upload>
         </a-col>
         <a-col :span="24">
-          <a-popconfirm 
-            title="Êtes-vous sûr de vouloir effacer toutes les données ?"
-            ok-text="Oui, tout effacer" 
-            cancel-text="Annuler" 
-            @confirm="clearAll"
-            placement="topRight"
-          >
+          <a-popconfirm title="Êtes-vous sûr de vouloir effacer toutes les données ?" ok-text="Oui, tout effacer"
+            cancel-text="Annuler" @confirm="clearAll" placement="topRight">
             <a-button danger block size="large">
-              <template #icon><DeleteOutlined /></template>
+              <template #icon>
+                <DeleteOutlined />
+              </template>
               Effacer toutes les données
             </a-button>
           </a-popconfirm>

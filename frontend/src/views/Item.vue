@@ -2,13 +2,8 @@
   <a-card title="Rechercher un article" :bordered="false">
     <a-form @submit.prevent="lookup">
       <a-form-item>
-        <a-input-search
-          v-model:value="code"
-          placeholder="Entrez le code de l'article"
-          enter-button="Rechercher"
-          size="large"
-          @search="lookup"
-        />
+        <a-input-search v-model:value="code" placeholder="Entrez le code de l'article" enter-button="Rechercher"
+          size="large" @search="lookup" />
       </a-form-item>
     </a-form>
 
@@ -18,7 +13,7 @@
           <template #extra>
             <a-tag :color="statusColor(item.status)">{{ item.status }}</a-tag>
           </template>
-          
+
           <div v-if="item.image" class="item-image-wrapper">
             <img :src="item.image" alt="Photo vêtement" class="item-image" />
           </div>
@@ -27,21 +22,23 @@
             <a-descriptions-item label="Propriétaire"><strong>{{ item.owner }}</strong></a-descriptions-item>
             <a-descriptions-item label="Contact">{{ item.contact || 'N/A' }}</a-descriptions-item>
             <a-descriptions-item label="Prix">{{ item.price }} FCFA</a-descriptions-item>
-            <a-descriptions-item label="Montant Payé" v-if="item.amountGiven">{{ item.amountGiven }} FCFA</a-descriptions-item>
-            <a-descriptions-item label="Monnaie" v-if="item.amountGiven && item.amountGiven >= item.price">{{ item.amountGiven - item.price }} FCFA</a-descriptions-item>
+            <a-descriptions-item label="Montant Payé" v-if="item.amountGiven">{{ item.amountGiven }}
+              FCFA</a-descriptions-item>
+            <a-descriptions-item label="Monnaie" v-if="item.amountGiven && item.amountGiven >= item.price">{{
+              item.amountGiven -
+              item.price }} FCFA</a-descriptions-item>
             <a-descriptions-item label="Reçu le">{{ formatDate(item.date_received) }}</a-descriptions-item>
-            <a-descriptions-item v-if="item.date_promised" label="Promis pour le">{{ formatDate(item.date_promised) }}</a-descriptions-item>
-            <a-descriptions-item v-if="item.date_cleaned" label="Nettoyé le">{{ formatDate(item.date_cleaned) }}</a-descriptions-item>
-            <a-descriptions-item v-if="item.date_delivered" label="Livré le">{{ formatDate(item.date_delivered) }}</a-descriptions-item>
+            <a-descriptions-item v-if="item.date_promised" label="Promis pour le">{{ formatDate(item.date_promised)
+              }}</a-descriptions-item>
+            <a-descriptions-item v-if="item.date_cleaned" label="Nettoyé le">{{ formatDate(item.date_cleaned)
+              }}</a-descriptions-item>
+            <a-descriptions-item v-if="item.date_delivered" label="Livré le">{{ formatDate(item.date_delivered)
+              }}</a-descriptions-item>
           </a-descriptions>
 
           <div v-if="item.items && item.items.length" style="margin-top: 16px;">
             <strong>Articles :</strong>
-            <a-list
-              size="small"
-              :data-source="item.items"
-              :render-item="(line, i) => ({ key: i })"
-            >
+            <a-list size="small" :data-source="item.items" :render-item="(line, i) => ({ key: i })">
               <template #renderItem="{ item: line }">
                 <a-list-item>
                   {{ line.qty }} × {{ line.type }}
@@ -50,10 +47,12 @@
               </template>
             </a-list>
           </div>
-          
+
           <a-space style="margin-top: 16px; width: 100%; justify-content: center;">
-            <a-button v-if="item.status==='received'" type="primary" @click="markClean" size="large">Marquer comme Nettoyé</a-button>
-            <a-button v-if="item.status==='cleaned'" type="primary" @click="markDelivered" size="large">Marquer comme Livré</a-button>
+            <a-button v-if="item.status === 'received'" type="primary" @click="markClean" size="large">Marquer comme
+              Nettoyé</a-button>
+            <a-button v-if="item.status === 'cleaned'" type="primary" @click="markDelivered" size="large">Marquer comme
+              Livré</a-button>
           </a-space>
         </a-card>
       </div>
@@ -117,10 +116,12 @@ function statusColor(status: string) {
 .item-details-card {
   margin-top: 16px;
 }
+
 .item-image-wrapper {
   text-align: center;
   margin-bottom: 16px;
 }
+
 .item-image {
   max-width: 100%;
   max-height: 250px;

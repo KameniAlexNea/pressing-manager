@@ -2,23 +2,13 @@
   <a-card title="Recherche par Propriétaire" :bordered="false">
     <a-form @submit.prevent="load">
       <a-form-item>
-        <a-input-search
-          v-model:value="owner"
-          placeholder="Entrez le nom du propriétaire"
-          enter-button="Rechercher"
-          size="large"
-          @search="load"
-        />
+        <a-input-search v-model:value="owner" placeholder="Entrez le nom du propriétaire" enter-button="Rechercher"
+          size="large" @search="load" />
       </a-form-item>
     </a-form>
 
     <a-skeleton :loading="loading" active>
-      <a-list
-        v-if="searched"
-        item-layout="horizontal"
-        :data-source="rows"
-        :row-key="'id'"
-      >
+      <a-list v-if="searched" item-layout="horizontal" :data-source="rows" :row-key="'id'">
         <template #renderItem="{ item }">
           <a-list-item>
             <template #actions>
