@@ -1,6 +1,11 @@
 <template>
   <a-layout style="min-height: 100vh">
-    <a-layout-sider :collapsible="true" v-model:collapsed="collapsed" breakpoint="lg">
+    <a-layout-sider
+      :collapsible="true"
+      v-model:collapsed="collapsed"
+      :collapsedWidth="0"
+      :breakpoint="'sm'"
+    >
       <div class="logo">PM</div>
       <a-menu theme="dark" mode="inline" :selectedKeys="[selectedKey]" @click="onMenuClick">
         <a-menu-item key="/">
@@ -43,6 +48,9 @@
     </a-layout-sider>
     <a-layout>
       <a-layout-header class="site-header">
+        <a-button class="menu-toggle" type="text" @click="collapsed = !collapsed">
+          <template #icon><span class="anticon"><svg viewBox="64 64 896 896" focusable="false" data-icon="menu" width="1em" height="1em" fill="currentColor" aria-hidden="true"><path d="M120 300h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm784 152H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 216H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8z"></path></svg></span></template>
+        </a-button>
         <div class="title">Pressing Manager</div>
       </a-layout-header>
       <a-layout-content style="margin: 16px">
@@ -116,5 +124,16 @@ body {
   padding: 16px;
   min-height: calc(100vh - 160px);
   border-radius: 8px;
+}
+
+/* Mobile responsiveness */
+.menu-toggle { display: none; color: #fff; margin-right: 8px; }
+@media (max-width: 576px) {
+  .menu-toggle { display: inline-flex; }
+  .site-header { padding: 0 8px; }
+  .title { font-size: 16px; }
+  .site-content { padding: 12px; border-radius: 0; min-height: calc(100vh - 112px); }
+  .ant-layout-sider-children .logo { margin: 8px; }
+  .ant-layout { overflow-x: hidden; }
 }
 </style>
