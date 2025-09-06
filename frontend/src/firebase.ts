@@ -1,5 +1,14 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "firebase/auth";
+import { 
+  getAuth, 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  signInWithPopup,
+  GoogleAuthProvider,
+  signOut, 
+  onAuthStateChanged,
+  type User
+} from "firebase/auth";
 import { getAnalytics } from "firebase/analytics";
 
 // Your web app's Firebase configuration from environment variables
@@ -18,4 +27,15 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const analytics = getAnalytics(app);
 
-export { auth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged };
+// Google Auth Provider
+const googleProvider = new GoogleAuthProvider();
+
+// Auth functions
+export const signInWithGoogle = () => signInWithPopup(auth, googleProvider);
+export const loginWithEmail = (email: string, password: string) => 
+  signInWithEmailAndPassword(auth, email, password);
+export const registerWithEmail = (email: string, password: string) => 
+  createUserWithEmailAndPassword(auth, email, password);
+export const logout = () => signOut(auth);
+
+export { auth, onAuthStateChanged, type User };

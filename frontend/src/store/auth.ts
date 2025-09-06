@@ -1,7 +1,14 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
-import { auth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from '../firebase'
-import type { User } from 'firebase/auth'
+import { 
+  auth, 
+  loginWithEmail, 
+  registerWithEmail, 
+  signInWithGoogle,
+  logout as firebaseLogout, 
+  onAuthStateChanged,
+  type User
+} from '../firebase'
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
@@ -42,33 +49,53 @@ export const useAuthStore = defineStore('auth', () => {
 
   const login = async (email: string, password: string) => {
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password)
-      user.value = userCredential.user
-      token.value = await userCredential.user.getIdToken()
+      loading.value = true
+      const userCredential = await loginWithEmail(email, password)
+      // Token and user will be set by onAuthStateChanged listener
       return userCredential.user
-    } catch (error) {
-      throw error
+    } catch (error: any) {
+      console.error('Login error:', error)
+      throw new Error(error.message || 'Login failed')
+    } finally {
+      loading.value = false
     }
   }
 
   const register = async (email: string, password: string) => {
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password)
-      user.value = userCredential.user
-      token.value = await userCredential.user.getIdToken()
+      loading.value = true  
+      const userCredential = await registerWithEmail(email, password)
+      // Token and user will be set by onAuthStateChanged listener
       return userCredential.user
-    } catch (error) {
-      throw error
+    } catch (error: any) {
+      console.error('Registration error:', error)
+      throw new Error(error.message || 'Registration failed')
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const loginWithGoogle = async () => {
+    try {
+      loading.value = true
+      const userCredential = await signInWithGoogle()
+      return userCredential.user
+    } catch (error: any) {
+      console.error('Google login error:', error)
+      throw new Error(error.message || 'Google login failed')
+    } finally {
+      loading.value = false
     }
   }
 
   const logout = async () => {
     try {
-      await signOut(auth)
+      await firebaseLogout()
       user.value = null
       token.value = null
-    } catch (error) {
-      throw error
+    } catch (error: any) {
+      console.error('Logout error:', error)
+      throw new Error(error.message || 'Logout failed')
     }
   }
 
@@ -84,6 +111,7 @@ export const useAuthStore = defineStore('auth', () => {
     initAuth,
     login,
     register,
+    loginWithGoogle,
     logout,
     getAuthHeaders
   }

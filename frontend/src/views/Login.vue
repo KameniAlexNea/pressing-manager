@@ -16,6 +16,17 @@
           </a-button>
         </a-form-item>
         
+        <a-divider>ou</a-divider>
+        
+        <a-form-item>
+          <a-button @click="handleGoogleLogin" block :loading="loading">
+            <template #icon>
+              <GoogleOutlined />
+            </template>
+            Se connecter avec Google
+          </a-button>
+        </a-form-item>
+        
         <a-form-item>
           <a-button type="link" block @click="showRegister = !showRegister">
             {{ showRegister ? 'Déjà un compte ? Se connecter' : 'Pas de compte ? S\'inscrire' }}
@@ -55,6 +66,7 @@ import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../store/auth'
 import { message } from 'ant-design-vue'
+import { GoogleOutlined } from '@ant-design/icons-vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -113,6 +125,19 @@ const handleRegister = async () => {
     router.push('/')
   } catch (error: any) {
     message.error('Erreur d\'inscription: ' + error.message)
+  } finally {
+    loading.value = false
+  }
+}
+
+const handleGoogleLogin = async () => {
+  loading.value = true
+  try {
+    await authStore.loginWithGoogle()
+    message.success('Connexion Google réussie ! Redirection...')
+    router.push('/')
+  } catch (error: any) {
+    message.error(error.message || 'Erreur lors de la connexion Google')
   } finally {
     loading.value = false
   }
