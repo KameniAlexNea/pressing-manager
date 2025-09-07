@@ -67,7 +67,7 @@
           <HomeOutlined />
           <span>Accueil</span>
         </router-link>
-        <router-link to="/register" class="tab" active-class="active">
+        <router-link to="/item-register" class="tab" active-class="active">
           <PlusCircleOutlined />
           <span>Enregistrer</span>
         </router-link>

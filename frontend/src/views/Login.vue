@@ -28,35 +28,11 @@
         </a-form-item>
         
         <a-form-item>
-          <a-button type="link" block @click="showRegister = !showRegister">
-            {{ showRegister ? 'Déjà un compte ? Se connecter' : 'Pas de compte ? S\'inscrire' }}
+          <a-button type="link" block @click="goToRegister">
+            Pas de compte ? S'inscrire
           </a-button>
         </a-form-item>
       </a-form>
-      
-      <!-- Registration Form -->
-      <div v-if="showRegister">
-        <a-divider>Inscription</a-divider>
-        <a-form layout="vertical" @submit.prevent="handleRegister">
-          <a-form-item label="Email">
-            <a-input v-model:value="registerForm.email" type="email" placeholder="votre@email.com" />
-          </a-form-item>
-          
-          <a-form-item label="Mot de passe">
-            <a-input-password v-model:value="registerForm.password" placeholder="Mot de passe (min 6 caractères)" />
-          </a-form-item>
-          
-          <a-form-item label="Confirmer mot de passe">
-            <a-input-password v-model:value="registerForm.confirmPassword" placeholder="Confirmer le mot de passe" />
-          </a-form-item>
-          
-          <a-form-item>
-            <a-button type="default" html-type="submit" block :loading="loading">
-              S'inscrire
-            </a-button>
-          </a-form-item>
-        </a-form>
-      </div>
     </a-card>
   </div>
 </template>
@@ -71,7 +47,6 @@ import { GoogleOutlined } from '@ant-design/icons-vue'
 const router = useRouter()
 const authStore = useAuthStore()
 const loading = ref(false)
-const showRegister = ref(false)
 
 // Detect mobile (basic user agent check)
 const isMobile = computed(() => /android|iphone|ipad|ipod/i.test(navigator.userAgent))
@@ -79,12 +54,6 @@ const isMobile = computed(() => /android|iphone|ipad|ipod/i.test(navigator.userA
 const form = reactive({
   email: '',
   password: ''
-})
-
-const registerForm = reactive({
-  email: '',
-  password: '',
-  confirmPassword: ''
 })
 
 const handleLogin = async () => {
@@ -105,34 +74,6 @@ const handleLogin = async () => {
   }
 }
 
-const handleRegister = async () => {
-  if (!registerForm.email || !registerForm.password || !registerForm.confirmPassword) {
-    message.error('Veuillez remplir tous les champs')
-    return
-  }
-  
-  if (registerForm.password !== registerForm.confirmPassword) {
-    message.error('Les mots de passe ne correspondent pas')
-    return
-  }
-  
-  if (registerForm.password.length < 6) {
-    message.error('Le mot de passe doit contenir au moins 6 caractères')
-    return
-  }
-  
-  loading.value = true
-  try {
-    await authStore.register(registerForm.email, registerForm.password)
-    message.success('Inscription réussie')
-    router.push('/')
-  } catch (error: any) {
-    message.error('Erreur d\'inscription: ' + error.message)
-  } finally {
-    loading.value = false
-  }
-}
-
 const handleGoogleLogin = async () => {
   loading.value = true
   try {
@@ -144,6 +85,10 @@ const handleGoogleLogin = async () => {
   } finally {
     loading.value = false
   }
+}
+
+const goToRegister = () => {
+  router.push('/register')
 }
 </script>
 

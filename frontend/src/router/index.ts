@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../store/auth'
 
 import Home from '../views/Home.vue'
+import ItemRegister from '../views/ItemRegister.vue'
 import Register from '../views/Register.vue'
 import Item from '../views/Item.vue'
 import Pending from '../views/Pending.vue'
@@ -14,8 +15,9 @@ import Login from '../views/Login.vue'
 
 const routes = [
   { path: '/login', component: Login, meta: { title: 'Connexion', requiresGuest: true } },
+  { path: '/register', component: Register, meta: { title: 'Inscription', requiresGuest: true } },
   { path: '/', component: Home, meta: { title: 'Accueil', requiresAuth: true } },
-  { path: '/register', component: Register, meta: { title: 'Enregistrer', requiresAuth: true } },
+  { path: '/item-register', component: ItemRegister, meta: { title: 'Enregistrer', requiresAuth: true } },
   { path: '/item', component: Item, meta: { title: 'Article', requiresAuth: true } },
   { path: '/pending', component: Pending, meta: { title: 'En attente', requiresAuth: true } },
   { path: '/owner', component: Owner, meta: { title: 'Propriétaire', requiresAuth: true } },
