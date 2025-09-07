@@ -1,5 +1,8 @@
 <template>
   <a-card title="Liste des Articles" :bordered="false">
+    <template #extra>
+      <GlobalSearch @search="onSearch" @clear="onClear" />
+    </template>
     <a-tabs v-model:activeKey="statusTab" centered @change="onTabChange">
       <a-tab-pane key="received" tab="Reçus" />
       <a-tab-pane key="cleaned" tab="Nettoyés" />
@@ -44,6 +47,7 @@ import { useItemsStore } from '../store/itemsStore'
 import { useNavigation } from '../composables/useFormatting'
 import { message } from 'ant-design-vue'
 import ItemList from '../components/items/ItemList.vue'
+import GlobalSearch from '../components/common/GlobalSearch.vue'
 
 const itemsStore = useItemsStore()
 const { goToItem } = useNavigation()
@@ -96,7 +100,7 @@ function viewItem(id: string) {
   goToItem(id)
 }
 
-function handleStatusChange(id: string, status: 'cleaned' | 'delivered') {
+function handleStatusChange(_id: string, _status: 'cleaned' | 'delivered') {
   // After status change, reload all items to refresh the cache
   setTimeout(() => {
     itemsStore.fetchAllItems(true) // Force refresh
@@ -120,10 +124,24 @@ function onPageChange(page: number) {
   // No network request needed - pagination is handled by computed properties
 }
 
-function onPageSizeChange(current: number, size: number) {
+function onPageSizeChange(_current: number, size: number) {
   pageSize.value = size
   currentPage.value = 1 // Reset to first page when changing page size
   // No network request needed - pagination is handled by computed properties
+}
+
+function onSearch(filters: any) {
+  itemsStore.setSearchFilters({
+    ...filters,
+    dateReceivedFrom: filters.dateReceivedFrom?.toISOString?.() || null,
+    dateReceivedTo: filters.dateReceivedTo?.toISOString?.() || null,
+    datePromisedFrom: filters.datePromisedFrom?.toISOString?.() || null,
+    datePromisedTo: filters.datePromisedTo?.toISOString?.() || null,
+  })
+}
+
+function onClear() {
+  itemsStore.clearFilters()
 }
 
 // Load items on component mount

@@ -1,37 +1,8 @@
 <template>
   <a-card title="Recherche par Propriétaire" :bordered="false">
-    <a-form @submit.prevent="load">
-      <a-form-item>
-        <a-input-search v-model:value="owner" placeholder="Entrez le nom du propriétaire" enter-button="Rechercher"
-          size="large" @search="load" :loading="loading" :disabled="loading" aria-label="Recherche propriétaire" />
-      </a-form-item>
-    </a-form>
-
-    <a-skeleton :loading="loading" active>
-      <a-list v-if="searched" item-layout="horizontal" :data-source="rows" :row-key="'id'"
-        :pagination="{ pageSize: 10, showSizeChanger: true, pageSizeOptions: ['5', '10', '20', '50'] }">
-        <template #renderItem="{ item }">
-          <a-list-item>
-            <template #actions>
-              <a-button size="small" @click="viewItem(item.id)">Détails</a-button>
-            </template>
-            <a-list-item-meta>
-              <template #title>
-                <a @click="viewItem(item.id)">Article #{{ item.id }}</a>
-              </template>
-              <template #description>
-                <p>{{ item.description }}</p>
-                Reçu le: {{ formatDate(item.date_received) }}
-              </template>
-            </a-list-item-meta>
-            <template #extra>
-              <a-tag :color="statusColor(item.status)">{{ item.status }}</a-tag>
-            </template>
-          </a-list-item>
-        </template>
-      </a-list>
-      <a-empty v-if="searched && rows.length === 0" description="Aucun article trouvé pour ce propriétaire." />
-    </a-skeleton>
+    <GlobalSearch @search="onSearch" @clear="onClear" />
+    <OwnerList v-if="searched" :rows="rows" :loading="loading" @view="viewItem" />
+    <a-empty v-if="searched && !loading && rows.length === 0" description="Aucun article trouvé pour ce propriétaire." />
   </a-card>
 </template>
 
@@ -40,15 +11,16 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { getByOwner, type ClothingItem } from '../store/items'
-import { useFormatting, useNavigation } from '../composables/useFormatting'
+import { useNavigation } from '../composables/useFormatting'
 import { message } from 'ant-design-vue'
+import GlobalSearch from '../components/common/GlobalSearch.vue'
+import OwnerList from '../components/items/OwnerList.vue'
 
 
 const owner = ref('')
 const rows = ref<ClothingItem[]>([])
 const loading = ref(false)
 const searched = ref(false)
-const { formatDate, statusColor } = useFormatting()
 const { goToItem } = useNavigation()
 
 async function load() {
@@ -76,6 +48,19 @@ async function load() {
 
 function viewItem(id: string) {
   goToItem(id)
+}
+
+function onSearch(filters: any) {
+  // Use the free-text query as owner name for this view
+  owner.value = (filters?.query || '').trim()
+  searched.value = false
+  load()
+}
+
+function onClear() {
+  owner.value = ''
+  rows.value = []
+  searched.value = false
 }
 
 

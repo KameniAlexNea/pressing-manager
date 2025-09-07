@@ -151,7 +151,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 import { SearchOutlined, FilterOutlined } from '@ant-design/icons-vue'
 import { getTypes } from '../../store/types'
 import type { Dayjs } from 'dayjs'
@@ -269,20 +269,39 @@ defineExpose({
 .filter-button {
   white-space: nowrap;
   color: #fff !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
+  background: rgba(255, 255, 255, 0.05) !important;
 }
 
 .filter-button:hover {
   color: rgba(255, 255, 255, 0.8) !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(255, 255, 255, 0.5) !important;
 }
 
 @media (max-width: 768px) {
   .global-search {
-    flex-direction: column;
-    gap: 12px;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: stretch;
   }
   
   .search-input {
-    width: 100%;
+    flex: 1;
+    min-width: 200px;
+  }
+  
+  .filter-button {
+    flex-shrink: 0;
+    background: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    color: #fff !important;
+    padding: 8px 12px !important;
+    height: 40px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
   }
 }
 </style>

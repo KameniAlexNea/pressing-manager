@@ -7,133 +7,32 @@
 
     <!-- Only show header and footer if authenticated -->
     <template v-else>
-      <a-layout-header v-if="authStore.isAuthenticated" class="header">
-        <div class="header-left">
-          <div class="title">{{ currentTitle }}</div>
-        </div>
-        
-        <div class="header-center" v-if="showSearchBar">
-          <GlobalSearch
-            ref="globalSearchRef"
-            @search="handleGlobalSearch"
-            @clear="handleSearchClear"
-          />
-        </div>
-        
-        <div class="header-right">
-          <a-dropdown>
-            <a class="ant-dropdown-link" @click.prevent>
-              <MenuOutlined style="font-size: 20px; color: #fff" />
-            </a>
-            <template #overlay>
-              <a-menu @click="onMenuClick">
-                <a-menu-item key="/deadlines">
-                  <template #icon>
-                    <CalendarOutlined />
-                  </template>
-                  Délais
-                </a-menu-item>
-                <a-menu-item key="/stats">
-                  <template #icon>
-                    <BarChartOutlined />
-                  </template>
-                  Statistiques
-                </a-menu-item>
-                <a-menu-item key="/storage">
-                  <template #icon>
-                    <DatabaseOutlined />
-                  </template>
-                  Sauvegarde
-                </a-menu-item>
-                <a-menu-item key="/types">
-                  <template #icon>
-                    <DatabaseOutlined />
-                  </template>
-                  Types
-                </a-menu-item>
-                <a-menu-item key="/owner">
-                  <template #icon>
-                    <UserOutlined />
-                  </template>
-                  Par propriétaire
-                </a-menu-item>
-                <a-menu-item key="/pending">
-                  <template #icon>
-                    <ClockCircleOutlined />
-                  </template>
-                  En attente
-                </a-menu-item>
-                <a-menu-divider />
-                <a-menu-item key="logout" @click="handleLogout">
-                  <template #icon>
-                    <LogoutOutlined />
-                  </template>
-                  Déconnexion
-                </a-menu-item>
-              </a-menu>
-            </template>
-          </a-dropdown>
-        </div>
-      </a-layout-header>
+  <AppHeader v-if="authStore.isAuthenticated" :title="currentTitle" @menu="onMenuClick" />
 
       <a-layout-content :style="contentStyle">
         <router-view />
       </a-layout-content>
 
-      <a-layout-footer v-if="authStore.isAuthenticated" class="footer">
-        <div class="tabs">
-          <router-link to="/" class="tab" active-class="active">
-            <HomeOutlined />
-            <span>Accueil</span>
-          </router-link>
-          <router-link to="/item-register" class="tab" active-class="active">
-            <PlusCircleOutlined />
-            <span>Enregistrer</span>
-          </router-link>
-          <router-link to="/item" class="tab" active-class="active">
-            <SearchOutlined />
-            <span>Article</span>
-          </router-link>
-        </div>
-      </a-layout-footer>
+  <AppFooter v-if="authStore.isAuthenticated" />
     </template>
   </a-layout>
 </template>
 
 <script setup lang="ts">
-import { computed, watch, onMounted, ref } from 'vue'
+import { computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from './store/auth'
-import { useItemsStore } from './store/itemsStore'
 import { initializeTypes } from './store/types'
-import GlobalSearch from './components/common/GlobalSearch.vue'
-import type { SearchFilters } from './components/common/GlobalSearch.vue'
-import {
-  HomeOutlined,
-  PlusCircleOutlined,
-  SearchOutlined,
-  ClockCircleOutlined,
-  UserOutlined,
-  CalendarOutlined,
-  BarChartOutlined,
-  DatabaseOutlined,
-  MenuOutlined,
-  LogoutOutlined
-} from '@ant-design/icons-vue'
+import AppHeader from './components/layout/AppHeader.vue'
+import AppFooter from './components/layout/AppFooter.vue'
 
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
-const itemsStore = useItemsStore()
-const globalSearchRef = ref()
 
 const currentTitle = computed(() => (route.meta?.title as string) || 'Pressing Manager')
 
-// Show search bar only on certain pages
-const showSearchBar = computed(() => {
-  const searchablePages = ['/', '/pending', '/owner', '/deadlines', '/stats']
-  return searchablePages.includes(route.path)
-})
+// No header search; each view owns its search UI
 
 const contentStyle = computed(() => {
   if (!authStore.isAuthenticated) {
@@ -147,7 +46,7 @@ const contentStyle = computed(() => {
   }
 })
 
-function onMenuClick({ key }: { key: string }) {
+function onMenuClick(key: string) {
   if (key === 'logout') {
     handleLogout()
   } else if (key !== route.path) {
@@ -158,42 +57,6 @@ function onMenuClick({ key }: { key: string }) {
 async function handleLogout() {
   await authStore.logout()
   router.push('/login')
-}
-
-function handleGlobalSearch(filters: SearchFilters) {
-  console.log('Global search triggered:', filters)
-  if (globalSearchRef.value) {
-    globalSearchRef.value.setLoading(true)
-  }
-  
-  // Convert Dayjs dates to strings for the store
-  const storeFilters = {
-    ...filters,
-    dateReceivedFrom: filters.dateReceivedFrom?.toISOString() || null,
-    dateReceivedTo: filters.dateReceivedTo?.toISOString() || null,
-    datePromisedFrom: filters.datePromisedFrom?.toISOString() || null,
-    datePromisedTo: filters.datePromisedTo?.toISOString() || null,
-  }
-  
-  // Apply filters to items store
-  itemsStore.setSearchFilters(storeFilters)
-  
-  // Navigate to appropriate page based on current route
-  if (route.path === '/') {
-    // If on home page, navigate to pending to show filtered results
-    router.push('/pending')
-  }
-  
-  setTimeout(() => {
-    if (globalSearchRef.value) {
-      globalSearchRef.value.setLoading(false)
-    }
-  }, 500)
-}
-
-function handleSearchClear() {
-  console.log('Search cleared')
-  itemsStore.clearFilters()
 }
 
 onMounted(async () => {
@@ -280,7 +143,21 @@ body {
     flex-direction: column;
     height: auto;
     padding: 12px 20px;
-    gap: 12px;
+    align-items: stretch;
+  }
+  
+  .header-left {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  
+  .header-right {
+    position: absolute;
+    top: 12px;
+    right: 20px;
+    z-index: 1001;
   }
   
   .header-center {
@@ -290,7 +167,7 @@ body {
   }
   
   .ant-layout-content {
-    margin-top: 120px !important; /* Adjust for taller header on mobile */
+    margin-top: 100px !important; /* Adjust for taller header on mobile */
   }
 }
 
@@ -338,5 +215,31 @@ body {
 
 .ant-layout-content {
   overflow-y: auto;
+}
+
+/* Ensure dropdown is visible on mobile */
+@media (max-width: 768px) {
+  .ant-dropdown {
+    z-index: 1050 !important;
+  }
+  
+  .ant-dropdown-menu {
+    z-index: 1050 !important;
+    position: absolute !important;
+    right: 0 !important;
+    top: 40px !important;
+    min-width: 200px;
+  }
+  
+  /* Make menu button more clickable on mobile */
+  .header-right .ant-dropdown-link {
+    padding: 8px;
+    display: block;
+    border-radius: 4px;
+  }
+  
+  .header-right .ant-dropdown-link:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
 }
 </style>
