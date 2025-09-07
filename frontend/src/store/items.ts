@@ -198,7 +198,14 @@ export async function getPendingOlderThan(days: number): Promise<ClothingItem[]>
 export async function getWithDeadlines(owner?: string): Promise<ClothingItemWithDeadline[]> {
   const items = owner ? await getByOwner(owner) : await getAll()
 
-  return items.map(item => {
+  // Filter out delivered items and items without promised dates
+  const filteredItems = items.filter(item =>
+    item.status !== 'delivered' &&
+    item.date_promised &&
+    item.status !== 'cleaned' // Only show items that haven't been cleaned yet
+  )
+
+  return filteredItems.map(item => {
     let days_left: number | null = null
     if (item.date_promised) {
       const promisedDate = dayjs(item.date_promised)
