@@ -2,41 +2,7 @@
   <LoadingWrapper :loading="itemsStore.loading" :error="itemsStore.error" :show-skeleton="true" :skeleton-rows="2"
     @retry="loadData">
 
-    <!-- Quick Actions -->
-    <a-row :gutter="[16, 16]" style="margin-top: 24px">
-      <a-col :span="24">
-        <a-card title="Actions rapides" :bordered="false">
-          <a-space wrap size="large">
-            <a-button type="primary" size="large" @click="$router.push('/item-register')">
-              <template #icon>
-                <PlusCircleOutlined />
-              </template>
-              Nouvel Article
-            </a-button>
-            <a-button size="large" @click="$router.push('/item')">
-              <template #icon>
-                <SearchOutlined />
-              </template>
-              Rechercher
-            </a-button>
-            <a-button size="large" @click="$router.push('/pending')">
-              <template #icon>
-                <ClockCircleOutlined />
-              </template>
-              En Attente
-            </a-button>
-            <a-button size="large" @click="$router.push('/deadlines')" :danger="overdueCount > 0">
-              <template #icon>
-                <CalendarOutlined />
-              </template>
-              Délais
-              <a-badge v-if="overdueCount > 0" :count="overdueCount" style="margin-left: 8px" />
-            </a-button>
-          </a-space>
-        </a-card>
-      </a-col>
-    </a-row>
-    
+    <!-- Statistics Cards -->
     <a-row :gutter="[16, 16]">
       <a-col :xs="12" :sm="12" :md="6" v-for="card in cards" :key="card.title">
         <a-card :title="card.title" :bordered="false" class="stat-card">
@@ -46,7 +12,21 @@
       </a-col>
     </a-row>
 
-    <a-row :gutter="[16, 16]" style="margin-top: 24px">
+    <!-- Quick Actions -->
+    <a-row :gutter="[16, 16]" style="margin-top: 32px">
+      <a-col :xs="24" :sm="12" :md="6" v-for="action in quickActions" :key="action.key">
+        <QuickActionCard
+          :title="action.title"
+          :description="action.description"
+          :icon="action.icon"
+          :badge="action.badge"
+          :danger="action.danger"
+          @click="action.onClick"
+        />
+      </a-col>
+    </a-row>
+
+    <a-row :gutter="[16, 16]" style="margin-top: 48px">
       <a-col :span="24">
         <a-card title="Articles par semaine" :bordered="false">
           <div class="chart-container">
@@ -64,6 +44,7 @@ import { onMounted, ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useItemsStore } from '../store/itemsStore'
 import LoadingWrapper from '../components/common/LoadingWrapper.vue'
+import QuickActionCard from '../components/common/QuickActionCard.vue'
 import Chart from 'chart.js/auto'
 import dayjs from 'dayjs'
 import {
@@ -96,6 +77,45 @@ const overdueCount = computed(() => {
     dayjs(item.date_promised).isBefore(today, 'day')
   ).length
 })
+
+const quickActions = computed(() => [
+  {
+    key: 'register',
+    title: 'Nouvel Article',
+    description: 'Enregistrer un nouveau vêtement',
+    icon: PlusCircleOutlined,
+    onClick: () => router.push('/item-register'),
+    danger: false,
+    badge: null
+  },
+  {
+    key: 'search',
+    title: 'Rechercher',
+    description: 'Trouver un article spécifique',
+    icon: SearchOutlined,
+    onClick: () => router.push('/item'),
+    danger: false,
+    badge: null
+  },
+  {
+    key: 'pending',
+    title: 'En Attente',
+    description: 'Articles en cours de traitement',
+    icon: ClockCircleOutlined,
+    onClick: () => router.push('/pending'),
+    danger: false,
+    badge: itemsStore.stats.pending_items || null
+  },
+  {
+    key: 'deadlines',
+    title: 'Délais',
+    description: 'Suivi des échéances',
+    icon: CalendarOutlined,
+    onClick: () => router.push('/deadlines'),
+    danger: overdueCount.value > 0,
+    badge: overdueCount.value || null
+  }
+])
 
 async function loadData() {
   try {
@@ -188,20 +208,29 @@ onMounted(() => {
 <style scoped>
 .stat-card {
   text-align: center;
-  border-radius: 8px;
+  border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.stat-card:hover {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+  border-color: #f0f0f0;
 }
 
 .stat-value {
   font-size: 32px;
   font-weight: 700;
   color: #1677ff;
-  margin: 8px 0;
+  margin: 12px 0;
 }
 
 .stat-subtitle {
   color: #666;
   font-size: 14px;
+  font-weight: 500;
 }
 
 .chart-container {
@@ -212,11 +241,17 @@ onMounted(() => {
 
 @media (max-width: 768px) {
   .stat-value {
-    font-size: 24px;
+    font-size: 26px;
   }
 
   .chart-container {
     height: 180px;
+  }
+}
+
+@media (max-width: 576px) {
+  .stat-value {
+    font-size: 22px;
   }
 }
 </style>
