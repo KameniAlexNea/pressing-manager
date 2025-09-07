@@ -168,7 +168,7 @@ const createDefaultFormState = (): FormT => ({
     date_received: dayjs(),
     date_promised: dayjs().add(defaultPromisedDays, 'day'),
     notes: '',
-    amountGiven: undefined,
+    amountGiven: 0,
 })
 
 const form = reactive<FormT>(createDefaultFormState())
@@ -183,8 +183,9 @@ function removeItem(idx: number) {
 const change = ref<number>(0)
 
 function calcChange() {
-    if (form.amountGiven && form.price && form.amountGiven >= form.price) {
-        change.value = form.amountGiven - form.price
+    const amountGiven = form.amountGiven || 0
+    if (amountGiven >= form.price && form.price > 0) {
+        change.value = amountGiven - form.price
     } else {
         change.value = 0
     }
@@ -217,6 +218,29 @@ async function onSubmit() {
         return;
     }
     
+    // Validate date received (should not be in the future)
+    if (form.date_received && form.date_received.isAfter(dayjs())) {
+        message.warning('La date de réception ne peut pas être dans le futur.')
+        return;
+    }
+    
+    // Validate contact number (Cameroon format: 6xxxxxxxx or xxxxxxxx with 8-9 digits)
+    if (form.contact && form.contact.trim()) {
+        const cleanContact = form.contact.trim().replace(/\s+/g, '') // Remove spaces
+        const contactRegex = /^(\+237)?6?\d{8}$/ // Optional +237, optional 6, then 8 digits
+        if (!contactRegex.test(cleanContact)) {
+            message.warning('Le numéro de contact doit être au format camerounais (ex: 6xxxxxxxx ou xxxxxxxx avec 8-9 chiffres).')
+            return;
+        }
+    }
+    
+    // Set amount given to 0 if empty, and validate it's not greater than price
+    const amountGiven = form.amountGiven || 0
+    if (amountGiven > form.price) {
+        message.warning('Le montant donné ne peut pas être supérieur au prix.')
+        return;
+    }
+    
     loading.value = true;
     try {
         console.log('Submitting form data:', form)
@@ -238,15 +262,15 @@ async function onSubmit() {
                 }),
             owner: form.owner,
             price: form.price,
+            amountGiven: amountGiven, // Always include amount given (default to 0)
         }
         
         // Only add optional fields if they have values
-        if (form.contact) itemData.contact = form.contact
+        if (form.contact) itemData.contact = form.contact.trim()
         if (form.date_received) itemData.date_received = form.date_received.toISOString()
         if (form.date_promised) itemData.date_promised = form.date_promised.toISOString()
         if (form.notes) itemData.notes = form.notes
         if (imageDataUrl.value) itemData.image = imageDataUrl.value
-        if (form.amountGiven !== undefined && form.amountGiven !== null) itemData.amountGiven = form.amountGiven
         
         console.log('Cleaned item data:', itemData)
         
