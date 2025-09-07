@@ -29,11 +29,11 @@
               item.price }} FCFA</a-descriptions-item>
             <a-descriptions-item label="Reçu le">{{ formatDate(item.date_received) }}</a-descriptions-item>
             <a-descriptions-item v-if="item.date_promised" label="Promis pour le">{{ formatDate(item.date_promised)
-              }}</a-descriptions-item>
+            }}</a-descriptions-item>
             <a-descriptions-item v-if="item.date_cleaned" label="Nettoyé le">{{ formatDate(item.date_cleaned)
-              }}</a-descriptions-item>
+            }}</a-descriptions-item>
             <a-descriptions-item v-if="item.date_delivered" label="Livré le">{{ formatDate(item.date_delivered)
-              }}</a-descriptions-item>
+            }}</a-descriptions-item>
           </a-descriptions>
 
           <div v-if="item.items && item.items.length" style="margin-top: 16px;">
@@ -47,8 +47,10 @@
           </div>
 
           <a-space style="margin-top: 16px; width: 100%; justify-content: center;">
-            <a-button v-if="item.status === 'received'" type="primary" @click="markClean" size="large" :loading="loading" :disabled="loading" aria-label="Marquer comme nettoyé">Marquer comme Nettoyé</a-button>
-            <a-button v-if="item.status === 'cleaned'" type="primary" @click="markDelivered" size="large" :loading="loading" :disabled="loading" aria-label="Marquer comme livré">Marquer comme Livré</a-button>
+            <a-button v-if="item.status === 'received'" type="primary" @click="markClean" size="large"
+              :loading="loading" :disabled="loading" aria-label="Marquer comme nettoyé">Marquer comme Nettoyé</a-button>
+            <a-button v-if="item.status === 'cleaned'" type="primary" @click="markDelivered" size="large"
+              :loading="loading" :disabled="loading" aria-label="Marquer comme livré">Marquer comme Livré</a-button>
           </a-space>
         </a-card>
       </div>

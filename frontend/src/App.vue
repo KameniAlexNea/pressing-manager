@@ -8,7 +8,7 @@ import {nitializing -->
       <a-spin size="large" />
       <div style="margin-top: 16px;">Chargement...</div>
     </div>
-    
+
     <!-- Only show header and footer if authenticated -->
     <template v-else>
       <a-layout-header v-if="authStore.isAuthenticated" class="header">
@@ -66,11 +66,11 @@ import {nitializing -->
           </template>
         </a-dropdown>
       </a-layout-header>
-      
+
       <a-layout-content :style="contentStyle">
         <router-view />
       </a-layout-content>
-      
+
       <a-layout-footer v-if="authStore.isAuthenticated" class="footer">
         <div class="tabs">
           <router-link to="/" class="tab" active-class="active">
@@ -119,7 +119,7 @@ const contentStyle = computed(() => {
   if (!authStore.isAuthenticated) {
     return { padding: '16px' }
   }
-  return { 
+  return {
     marginTop: '64px',
     marginBottom: '72px',
     padding: '16px',
@@ -140,10 +140,10 @@ async function handleLogout() {
   router.push('/login')
 }
 
-  onMounted(async () => {
-    console.log('App.vue mounted, initializing auth...')
-    console.log('Firebase config check:', {
-      apiKey: (import.meta as any).env.VITE_FIREBASE_API_KEY ? 'Present' : 'Missing',
+onMounted(async () => {
+  console.log('App.vue mounted, initializing auth...')
+  console.log('Firebase config check:', {
+    apiKey: (import.meta as any).env.VITE_FIREBASE_API_KEY ? 'Present' : 'Missing',
       projectId: (import.meta as any).env.VITE_FIREBASE_PROJECT_ID ? 'Present' : 'Missing',
     })
     

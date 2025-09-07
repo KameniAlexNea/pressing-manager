@@ -5,19 +5,19 @@
         <a-form-item label="Email" :rules="[{ required: true, type: 'email', message: 'Email requis' }]">
           <a-input v-model:value="form.email" type="email" placeholder="votre@email.com" />
         </a-form-item>
-        
+
         <a-form-item label="Mot de passe" :rules="[{ required: true, message: 'Mot de passe requis' }]">
           <a-input-password v-model:value="form.password" placeholder="Mot de passe" />
         </a-form-item>
-        
+
         <a-form-item>
           <a-button type="primary" html-type="submit" block :loading="loading">
             Se connecter
           </a-button>
         </a-form-item>
-        
+
         <a-divider>ou</a-divider>
-        
+
         <a-form-item v-if="!isMobile">
           <a-button @click="handleGoogleLogin" block :loading="loading">
             <template #icon>
@@ -26,7 +26,7 @@
             Se connecter avec Google
           </a-button>
         </a-form-item>
-        
+
         <a-form-item>
           <a-button type="link" block @click="goToRegister">
             Pas de compte ? S'inscrire
@@ -61,7 +61,7 @@ const handleLogin = async () => {
     message.error('Veuillez remplir tous les champs')
     return
   }
-  
+
   loading.value = true
   try {
     await authStore.login(form.email, form.password)

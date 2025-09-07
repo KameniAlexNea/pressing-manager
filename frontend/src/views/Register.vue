@@ -5,23 +5,23 @@
         <a-form-item label="Email" :rules="[{ required: true, type: 'email', message: 'Email requis' }]">
           <a-input v-model:value="form.email" type="email" placeholder="votre@email.com" />
         </a-form-item>
-        
+
         <a-form-item label="Mot de passe" :rules="[{ required: true, message: 'Mot de passe requis' }]">
           <a-input-password v-model:value="form.password" placeholder="Mot de passe (min 6 caractères)" />
         </a-form-item>
-        
+
         <a-form-item label="Confirmer mot de passe" :rules="[{ required: true, message: 'Confirmation requise' }]">
           <a-input-password v-model:value="form.confirmPassword" placeholder="Confirmer le mot de passe" />
         </a-form-item>
-        
+
         <a-form-item>
           <a-button type="primary" html-type="submit" block :loading="loading">
             S'inscrire
           </a-button>
         </a-form-item>
-        
+
         <a-divider>ou</a-divider>
-        
+
         <a-form-item v-if="!isMobile">
           <a-button @click="handleGoogleRegister" block :loading="loading">
             <template #icon>
@@ -30,7 +30,7 @@
             S'inscrire avec Google
           </a-button>
         </a-form-item>
-        
+
         <a-form-item>
           <a-button type="link" block @click="goToLogin">
             Déjà un compte ? Se connecter
@@ -66,17 +66,17 @@ const handleRegister = async () => {
     message.error('Veuillez remplir tous les champs')
     return
   }
-  
+
   if (form.password !== form.confirmPassword) {
     message.error('Les mots de passe ne correspondent pas')
     return
   }
-  
+
   if (form.password.length < 6) {
     message.error('Le mot de passe doit contenir au moins 6 caractères')
     return
   }
-  
+
   loading.value = true
   try {
     await authStore.register(form.email, form.password)

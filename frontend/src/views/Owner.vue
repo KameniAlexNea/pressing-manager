@@ -8,7 +8,8 @@
     </a-form>
 
     <a-skeleton :loading="loading" active>
-  <a-list v-if="searched" item-layout="horizontal" :data-source="rows" :row-key="'id'" :pagination="{ pageSize: 10, showSizeChanger: true, pageSizeOptions: ['5', '10', '20', '50'] }">
+      <a-list v-if="searched" item-layout="horizontal" :data-source="rows" :row-key="'id'"
+        :pagination="{ pageSize: 10, showSizeChanger: true, pageSizeOptions: ['5', '10', '20', '50'] }">
         <template #renderItem="{ item }">
           <a-list-item>
             <template #actions>

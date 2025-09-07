@@ -7,14 +7,15 @@
     </a-tabs>
 
     <a-skeleton :loading="loading" active>
-      <a-list item-layout="horizontal" :data-source="rows" :row-key="'id'" :pagination="{ pageSize: 10, showSizeChanger: true, pageSizeOptions: ['5', '10', '20', '50'] }">
+      <a-list item-layout="horizontal" :data-source="rows" :row-key="'id'"
+        :pagination="{ pageSize: 10, showSizeChanger: true, pageSizeOptions: ['5', '10', '20', '50'] }">
         <template #renderItem="{ item }">
           <a-list-item>
             <template #actions>
-              <a-button v-if="item.status === 'received'" type="primary" size="small"
-                @click="markClean(item.id)" :loading="loading" :disabled="loading" aria-label="Marquer comme nettoyé">Nettoyé</a-button>
-              <a-button v-if="item.status === 'cleaned'" type="primary" size="small"
-                @click="markDelivered(item.id)" :loading="loading" :disabled="loading" aria-label="Marquer comme livré">Livré</a-button>
+              <a-button v-if="item.status === 'received'" type="primary" size="small" @click="markClean(item.id)"
+                :loading="loading" :disabled="loading" aria-label="Marquer comme nettoyé">Nettoyé</a-button>
+              <a-button v-if="item.status === 'cleaned'" type="primary" size="small" @click="markDelivered(item.id)"
+                :loading="loading" :disabled="loading" aria-label="Marquer comme livré">Livré</a-button>
               <a-button size="small" @click="viewItem(item.id)" aria-label="Voir détails">Détails</a-button>
             </template>
             <a-list-item-meta>

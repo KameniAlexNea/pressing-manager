@@ -3,7 +3,8 @@
     <a-form @submit.prevent="load">
       <a-form-item>
         <a-input-search v-model:value="owner" placeholder="Filtrer par propriétaire (optionnel)"
-          enter-button="Rechercher" @search="load" :loading="loading" :disabled="loading" aria-label="Filtrer par propriétaire" />
+          enter-button="Rechercher" @search="load" :loading="loading" :disabled="loading"
+          aria-label="Filtrer par propriétaire" />
       </a-form-item>
     </a-form>
 
