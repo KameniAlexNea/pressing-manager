@@ -12,7 +12,11 @@ import {
   query,
   where,
   orderBy,
-  writeBatch
+  limit,
+  startAfter,
+  getCountFromServer,
+  writeBatch,
+  DocumentSnapshot
 } from 'firebase/firestore'
 import dayjs from 'dayjs'
 
@@ -54,6 +58,16 @@ export interface SearchFilters {
   priceMax: number | null
 }
 
+export interface PaginationInfo {
+  currentPage: number
+  pageSize: number
+  total: number
+  hasNextPage: boolean
+  hasPreviousPage: boolean
+  lastDoc: DocumentSnapshot | null
+  firstDoc: DocumentSnapshot | null
+}
+
 interface ItemsState {
   items: ClothingItem[]
   filteredItems: ClothingItem[]
@@ -61,6 +75,7 @@ interface ItemsState {
   loading: boolean
   error: string | null
   searchFilters: SearchFilters
+  pagination: PaginationInfo
   lastFetch: number | null
 }
 
@@ -86,6 +101,15 @@ export const useItemsStore = defineStore('items', () => {
       priceMin: null,
       priceMax: null
     },
+    pagination: {
+      currentPage: 1,
+      pageSize: 20,
+      total: 0,
+      hasNextPage: false,
+      hasPreviousPage: false,
+      lastDoc: null,
+      firstDoc: null
+    },
     lastFetch: null
   })
 
@@ -96,6 +120,8 @@ export const useItemsStore = defineStore('items', () => {
   const loading = computed(() => state.value.loading)
   const error = computed(() => state.value.error)
   const hasItems = computed(() => state.value.items.length > 0)
+  const pagination = computed(() => state.value.pagination)
+  const searchFilters = computed(() => state.value.searchFilters)
   
   const stats = computed(() => {
     const total = state.value.items.length
@@ -153,25 +179,52 @@ export const useItemsStore = defineStore('items', () => {
     return Date.now() - state.value.lastFetch > CACHE_DURATION
   }
 
-  // Actions
-  async function fetchAllItems(forceRefresh = false): Promise<void> {
-    if (!forceRefresh && !shouldRefetch()) {
-      return
-    }
+  // Actions - Optimized queries to avoid complex indexes
+  async function fetchItemsPaginated(
+    page: number = 1, 
+    pageSize: number = 20, 
+    statusFilter?: string,
+    forceRefresh = false
+  ): Promise<void> {
+    if (!forceRefresh && state.value.loading) return
 
     setLoading(true)
     setError(null)
 
     try {
       const userId = getCurrentUserId()
-      const q = query(
+      
+      if (statusFilter) {
+        // For status-filtered queries, use a simpler approach
+        return await fetchItemsByStatusSimple(statusFilter, page, pageSize)
+      }
+
+      // For all items (no status filter), use the simple query
+      let q = query(
         collection(db, COLLECTION_NAME),
         where('userId', '==', userId),
-        orderBy('date_received', 'desc')
+        orderBy('date_received', 'desc'),
+        limit(pageSize)
       )
 
+      // For pages beyond the first, use cursor pagination
+      if (page > 1 && state.value.pagination.lastDoc) {
+        q = query(
+          collection(db, COLLECTION_NAME),
+          where('userId', '==', userId),
+          orderBy('date_received', 'desc'),
+          startAfter(state.value.pagination.lastDoc),
+          limit(pageSize)
+        )
+      }
+
+      // Get total count
+      const countQuery = query(collection(db, COLLECTION_NAME), where('userId', '==', userId))
+      const countSnapshot = await getCountFromServer(countQuery)
+      const total = countSnapshot.data().count
+
       const querySnapshot = await getDocs(q)
-      console.log('Total items found:', querySnapshot.size)
+      console.log(`Fetched page ${page}: ${querySnapshot.size} items out of ${total} total`)
 
       const fetchedItems = querySnapshot.docs.map(doc => ({
         id: doc.id,
@@ -182,19 +235,118 @@ export const useItemsStore = defineStore('items', () => {
         date_promised: doc.data().date_promised ? timestampToString(doc.data().date_promised) : null,
       })) as ClothingItem[]
 
+      // Update pagination info
+      const totalPages = Math.ceil(total / pageSize)
+      state.value.pagination = {
+        currentPage: page,
+        pageSize,
+        total,
+        hasNextPage: page < totalPages,
+        hasPreviousPage: page > 1,
+        lastDoc: querySnapshot.docs[querySnapshot.docs.length - 1] || null,
+        firstDoc: querySnapshot.docs[0] || null
+      }
+
       state.value.items = fetchedItems
       state.value.lastFetch = Date.now()
       
-      // Apply current filters
+      // Apply current filters to fetched items
       applyFilters()
 
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erreur lors du chargement des articles'
-      console.error('Error fetching items:', err)
+      console.error('Error fetching paginated items:', err)
       setError(errorMessage)
       throw err
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Simple method for status-specific queries - loads all items and filters client-side
+  // This avoids composite index requirements but trades network efficiency for simplicity
+  async function fetchItemsByStatusSimple(
+    status: string, 
+    page: number = 1, 
+    pageSize: number = 20
+  ): Promise<void> {
+    const userId = getCurrentUserId()
+    
+    // Load all user items (cached for 5 minutes to avoid excessive Firebase reads)
+    if (!state.value.lastFetch || shouldRefetch()) {
+      const q = query(
+        collection(db, COLLECTION_NAME),
+        where('userId', '==', userId),
+        orderBy('date_received', 'desc')
+      )
+
+      const querySnapshot = await getDocs(q)
+      console.log(`Loaded all ${querySnapshot.size} user items for client-side filtering`)
+
+      const allItems = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        date_received: timestampToString(doc.data().date_received),
+        date_cleaned: doc.data().date_cleaned ? timestampToString(doc.data().date_cleaned) : null,
+        date_delivered: doc.data().date_delivered ? timestampToString(doc.data().date_delivered) : null,
+        date_promised: doc.data().date_promised ? timestampToString(doc.data().date_promised) : null,
+      })) as ClothingItem[]
+
+      // Cache all items by status for efficient filtering
+      state.value.items = allItems
+      state.value.lastFetch = Date.now()
+    }
+
+    // Filter by status client-side
+    const statusItems = state.value.items.filter(item => item.status === status)
+    
+    // Apply pagination client-side
+    const startIndex = (page - 1) * pageSize
+    const endIndex = startIndex + pageSize
+    const paginatedItems = statusItems.slice(startIndex, endIndex)
+
+    // Update pagination info for this status
+    const totalPages = Math.ceil(statusItems.length / pageSize)
+    state.value.pagination = {
+      currentPage: page,
+      pageSize,
+      total: statusItems.length,
+      hasNextPage: page < totalPages,
+      hasPreviousPage: page > 1,
+      lastDoc: null, // Not applicable for client-side pagination
+      firstDoc: null
+    }
+
+    // Set current page items (this will be filtered by displayedItems computed in the component)
+    // We keep all items in store but the component will show only the current status
+    // This allows switching between tabs without additional network requests
+    
+    console.log(`Status ${status}: showing ${paginatedItems.length} of ${statusItems.length} items (page ${page})`)
+  }
+
+  // Keep the old method for backward compatibility but make it use pagination
+  async function fetchAllItems(forceRefresh = false): Promise<void> {
+    return fetchItemsPaginated(1, state.value.pagination.pageSize, undefined, forceRefresh)
+  }
+
+  async function fetchItemsByStatus(status: string, page: number = 1): Promise<void> {
+    return fetchItemsByStatusSimple(status, page, state.value.pagination.pageSize)
+  }
+
+  async function goToPage(page: number): Promise<void> {
+    if (page < 1) return
+    return fetchItemsPaginated(page, state.value.pagination.pageSize)
+  }
+
+  async function nextPage(): Promise<void> {
+    if (state.value.pagination.hasNextPage) {
+      return goToPage(state.value.pagination.currentPage + 1)
+    }
+  }
+
+  async function previousPage(): Promise<void> {
+    if (state.value.pagination.hasPreviousPage) {
+      return goToPage(state.value.pagination.currentPage - 1)
     }
   }
 
@@ -577,13 +729,20 @@ export const useItemsStore = defineStore('items', () => {
     hasItems,
     stats,
     itemsByStatus,
-    searchFilters: computed(() => state.value.searchFilters),
+    pagination,
+    searchFilters,
 
     // Actions
     fetchAllItems,
+    fetchItemsPaginated,
+    fetchItemsByStatus,
+    fetchItemsByStatusSimple,
     fetchItemById,
     createItem,
     updateItemStatus,
+    goToPage,
+    nextPage,
+    previousPage,
     setSearchFilters,
     clearFilters,
     applyFilters,

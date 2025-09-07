@@ -82,6 +82,7 @@ interface Props {
   pageSize?: number
   showSizeChanger?: boolean
   showQuickJumper?: boolean
+  serverSidePagination?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -94,7 +95,8 @@ const props = withDefaults(defineProps<Props>(), {
   emptyImage: 'default',
   pageSize: 10,
   showSizeChanger: true,
-  showQuickJumper: false
+  showQuickJumper: false,
+  serverSidePagination: false
 })
 
 const emit = defineEmits<{
@@ -112,6 +114,11 @@ const previewImage = ref<string | null>(null)
 const displayItems = computed(() => props.items)
 
 const paginationConfig = computed(() => {
+  // If using server-side pagination, disable client-side pagination
+  if (props.serverSidePagination) {
+    return false
+  }
+  
   if (props.items.length <= props.pageSize) {
     return false
   }
