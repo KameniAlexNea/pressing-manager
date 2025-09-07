@@ -9,8 +9,7 @@ import {
   updateDoc,
   query,
   where,
-  orderBy,
-  writeBatch
+  orderBy
 } from 'firebase/firestore'
 import dayjs from 'dayjs'
 
@@ -293,44 +292,4 @@ export async function getStats() {
     pending_items: items.filter(i => i.status !== 'delivered').length,
     total_revenue: total_revenue
   }
-}
-
-export async function exportItems(): Promise<string> {
-  const items = await getAll()
-  return JSON.stringify(items, null, 2)
-}
-
-export async function importItems(json: string): Promise<void> {
-  const data = JSON.parse(json) as ClothingItem[]
-  const userId = getCurrentUserId()
-
-  const batch = writeBatch(db)
-
-  data.forEach(item => {
-    const docRef = doc(collection(db, COLLECTION_NAME))
-    const itemData = {
-      ...item,
-      userId,
-      date_received: new Date(item.date_received),
-      date_cleaned: item.date_cleaned ? new Date(item.date_cleaned) : null,
-      date_delivered: item.date_delivered ? new Date(item.date_delivered) : null,
-      date_promised: item.date_promised ? new Date(item.date_promised) : null,
-    }
-    delete (itemData as any).id // Remove id as it will be auto-generated
-    batch.set(docRef, itemData)
-  })
-
-  await batch.commit()
-}
-
-export async function clearItems(): Promise<void> {
-  const items = await getAll()
-  const batch = writeBatch(db)
-
-  items.forEach(item => {
-    const docRef = doc(db, COLLECTION_NAME, item.id)
-    batch.delete(docRef)
-  })
-
-  await batch.commit()
 }

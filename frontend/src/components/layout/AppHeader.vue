@@ -13,7 +13,6 @@
           <a-menu @click="onMenuClick">
             <a-menu-item key="/deadlines"><CalendarOutlined /> Délais</a-menu-item>
             <a-menu-item key="/stats"><BarChartOutlined /> Statistiques</a-menu-item>
-            <a-menu-item key="/storage"><DatabaseOutlined /> Sauvegarde</a-menu-item>
             <a-menu-item key="/types"><DatabaseOutlined /> Types</a-menu-item>
             <a-menu-item key="/owner"><UserOutlined /> Par propriétaire</a-menu-item>
             <a-menu-item key="/pending"><ClockCircleOutlined /> En attente</a-menu-item>

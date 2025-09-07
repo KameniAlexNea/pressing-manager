@@ -9,7 +9,6 @@ import Pending from '../views/Pending.vue'
 import Owner from '../views/Owner.vue'
 import Deadlines from '../views/Deadlines.vue'
 import Stats from '../views/Stats.vue'
-import Storage from '../views/Storage.vue'
 import Types from '../views/Types.vue'
 import Login from '../views/Login.vue'
 
@@ -23,7 +22,6 @@ const routes = [
   { path: '/owner', component: Owner, meta: { title: 'Propriétaire', requiresAuth: true } },
   { path: '/deadlines', component: Deadlines, meta: { title: 'Délais', requiresAuth: true } },
   { path: '/stats', component: Stats, meta: { title: 'Statistiques', requiresAuth: true } },
-  { path: '/storage', component: Storage, meta: { title: 'Sauvegarde', requiresAuth: true } },
   { path: '/types', component: Types, meta: { title: 'Types', requiresAuth: true } },
 ]
 

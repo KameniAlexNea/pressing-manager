@@ -15,7 +15,6 @@ import {
   limit,
   startAfter,
   getCountFromServer,
-  writeBatch,
   DocumentSnapshot
 } from 'firebase/firestore'
 import dayjs from 'dayjs'
@@ -517,81 +516,6 @@ export const useItemsStore = defineStore('items', () => {
       .sort((a, b) => (a.days_left || 0) - (b.days_left || 0))
   }
 
-  async function exportItems(): Promise<string> {
-    if (!hasItems.value) {
-      await fetchAllItems()
-    }
-    return JSON.stringify(state.value.items, null, 2)
-  }
-
-  async function importItems(json: string): Promise<void> {
-    setLoading(true)
-    setError(null)
-
-    try {
-      const data = JSON.parse(json) as ClothingItem[]
-      const userId = getCurrentUserId()
-
-      const batch = writeBatch(db)
-
-      data.forEach(item => {
-        const docRef = doc(collection(db, COLLECTION_NAME))
-        const itemData = {
-          ...item,
-          userId,
-          date_received: new Date(item.date_received),
-          date_cleaned: item.date_cleaned ? new Date(item.date_cleaned) : null,
-          date_delivered: item.date_delivered ? new Date(item.date_delivered) : null,
-          date_promised: item.date_promised ? new Date(item.date_promised) : null,
-        }
-        delete (itemData as any).id
-        batch.set(docRef, itemData)
-      })
-
-      await batch.commit()
-      
-      // Refresh items after import
-      await fetchAllItems(true)
-
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de l\'importation'
-      console.error('Error importing items:', err)
-      setError(errorMessage)
-      throw err
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  async function clearAllItems(): Promise<void> {
-    setLoading(true)
-    setError(null)
-
-    try {
-      const batch = writeBatch(db)
-
-      state.value.items.forEach(item => {
-        const docRef = doc(db, COLLECTION_NAME, item.id)
-        batch.delete(docRef)
-      })
-
-      await batch.commit()
-      
-      // Clear local state
-      state.value.items = []
-      state.value.currentItem = null
-      state.value.lastFetch = null
-
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Erreur lors de la suppression'
-      console.error('Error clearing items:', err)
-      setError(errorMessage)
-      throw err
-    } finally {
-      setLoading(false)
-    }
-  }
-
   return {
     // State
     items,
@@ -616,9 +540,6 @@ export const useItemsStore = defineStore('items', () => {
     previousPage,
     getItemsByOwner,
     getItemsWithDeadlines,
-    exportItems,
-    importItems,
-    clearAllItems,
     
     // Utilities
     setLoading,
@@ -668,19 +589,4 @@ export const getWithDeadlines = (owner?: string) => {
   }
   
   return Promise.resolve(items)
-}
-
-export const exportItems = () => {
-  const store = useItemsStore()
-  return store.exportItems()
-}
-
-export const importItems = (json: string) => {
-  const store = useItemsStore()
-  return store.importItems(json)
-}
-
-export const clearItems = () => {
-  const store = useItemsStore()
-  return store.clearAllItems()
 }
