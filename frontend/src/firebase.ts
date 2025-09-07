@@ -1,13 +1,13 @@
 import { initializeApp } from "firebase/app";
-import { 
-  getAuth, 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
   signInWithPopup,
   signInWithRedirect,
   getRedirectResult,
   GoogleAuthProvider,
-  signOut, 
+  signOut,
   onAuthStateChanged,
   type User
 } from "firebase/auth";
@@ -59,9 +59,9 @@ export const signInWithGoogle = () => {
   }
 };
 
-export const loginWithEmail = (email: string, password: string) => 
+export const loginWithEmail = (email: string, password: string) =>
   signInWithEmailAndPassword(auth, email, password);
-export const registerWithEmail = (email: string, password: string) => 
+export const registerWithEmail = (email: string, password: string) =>
   createUserWithEmailAndPassword(auth, email, password);
 export const logout = () => signOut(auth);
 

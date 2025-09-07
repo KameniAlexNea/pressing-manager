@@ -1,11 +1,11 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
-import { 
-  auth, 
-  loginWithEmail, 
-  registerWithEmail, 
+import {
+  auth,
+  loginWithEmail,
+  registerWithEmail,
   signInWithGoogle,
-  logout as firebaseLogout, 
+  logout as firebaseLogout,
   onAuthStateChanged,
   handleRedirectResult,
   type User
@@ -52,7 +52,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   const register = async (email: string, password: string) => {
     try {
-      loading.value = true  
+      loading.value = true
       const userCredential = await registerWithEmail(email, password)
       // Token and user will be set by onAuthStateChanged listener
       return userCredential.user

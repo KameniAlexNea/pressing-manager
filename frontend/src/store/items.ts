@@ -1,19 +1,19 @@
 import { useAuthStore } from './auth'
 import { db } from '../firebase'
-import { 
-  collection, 
-  doc, 
-  getDocs, 
-  getDoc, 
-  addDoc, 
-  updateDoc, 
-  deleteDoc, 
-  query, 
-  where, 
+import {
+  collection,
+  doc,
+  getDocs,
+  getDoc,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  query,
+  where,
   orderBy,
   writeBatch,
   serverTimestamp,
-  Timestamp 
+  Timestamp
 } from 'firebase/firestore'
 import dayjs from 'dayjs'
 
@@ -70,16 +70,16 @@ function timestampToString(timestamp: any): string {
 export async function getAll(): Promise<ClothingItem[]> {
   const userId = getCurrentUserId()
   console.log('Getting all items for userId:', userId)
-  
+
   const q = query(
-    collection(db, COLLECTION_NAME), 
+    collection(db, COLLECTION_NAME),
     where('userId', '==', userId),
     orderBy('date_received', 'desc')
   )
-  
+
   const querySnapshot = await getDocs(q)
   console.log('Total items found:', querySnapshot.size)
-  
+
   return querySnapshot.docs.map(doc => ({
     id: doc.id,
     ...doc.data(),
@@ -101,9 +101,9 @@ export async function createItem(data: Partial<ClothingItem>): Promise<ClothingI
     date_cleaned: null,
     date_delivered: null,
   }
-  
+
   const docRef = await addDoc(collection(db, COLLECTION_NAME), itemData)
-  
+
   return {
     id: docRef.id,
     ...data,
@@ -120,7 +120,7 @@ export async function getById(id: string): Promise<ClothingItem | undefined> {
   try {
     const docRef = doc(db, COLLECTION_NAME, id)
     const docSnap = await getDoc(docRef)
-    
+
     if (docSnap.exists()) {
       const data = docSnap.data()
       return {
@@ -142,18 +142,18 @@ export async function getById(id: string): Promise<ClothingItem | undefined> {
 export async function getByOwner(owner: string): Promise<ClothingItem[]> {
   const userId = getCurrentUserId()
   console.log('Searching for items:', { owner, userId })
-  
+
   const q = query(
-    collection(db, COLLECTION_NAME), 
+    collection(db, COLLECTION_NAME),
     where('userId', '==', userId),
     where('owner', '==', owner),
     orderBy('date_received', 'desc')
   )
-  
+
   const querySnapshot = await getDocs(q)
   console.log('Query snapshot size:', querySnapshot.size)
   console.log('Query docs:', querySnapshot.docs.map(doc => ({ id: doc.id, data: doc.data() })))
-  
+
   return querySnapshot.docs.map(doc => ({
     id: doc.id,
     ...doc.data(),
@@ -172,7 +172,7 @@ export async function getPendingOlderThan(days: number): Promise<ClothingItem[]>
 
 export async function getWithDeadlines(owner?: string): Promise<ClothingItemWithDeadline[]> {
   const items = owner ? await getByOwner(owner) : await getAll()
-  
+
   return items.map(item => {
     let days_left: number | null = null
     if (item.date_promised) {
@@ -180,7 +180,7 @@ export async function getWithDeadlines(owner?: string): Promise<ClothingItemWith
       const today = dayjs()
       days_left = promisedDate.diff(today, 'day')
     }
-    
+
     return {
       ...item,
       days_left
@@ -192,16 +192,16 @@ export async function updateStatus(id: string, status: ClothingItem['status']): 
   try {
     const docRef = doc(db, COLLECTION_NAME, id)
     const updateData: any = { status }
-    
+
     // Set timestamp based on status
     if (status === 'cleaned') {
       updateData.date_cleaned = new Date()
     } else if (status === 'delivered') {
       updateData.date_delivered = new Date()
     }
-    
+
     await updateDoc(docRef, updateData)
-    
+
     // Return updated item
     return await getById(id)
   } catch (error) {
@@ -212,13 +212,13 @@ export async function updateStatus(id: string, status: ClothingItem['status']): 
 
 export async function getStats() {
   const items = await getAll()
-  
+
   // Calculate total revenue from all items
   const total_revenue = items.reduce((sum, item) => {
     const price = typeof item.price === 'number' ? item.price : 0
     return sum + price
   }, 0)
-  
+
   return {
     total_items: items.length,
     received_items: items.filter(i => i.status === 'received').length,
@@ -237,9 +237,9 @@ export async function exportItems(): Promise<string> {
 export async function importItems(json: string): Promise<void> {
   const data = JSON.parse(json) as ClothingItem[]
   const userId = getCurrentUserId()
-  
+
   const batch = writeBatch(db)
-  
+
   data.forEach(item => {
     const docRef = doc(collection(db, COLLECTION_NAME))
     const itemData = {
@@ -253,18 +253,18 @@ export async function importItems(json: string): Promise<void> {
     delete (itemData as any).id // Remove id as it will be auto-generated
     batch.set(docRef, itemData)
   })
-  
+
   await batch.commit()
 }
 
 export async function clearItems(): Promise<void> {
   const items = await getAll()
   const batch = writeBatch(db)
-  
+
   items.forEach(item => {
     const docRef = doc(db, COLLECTION_NAME, item.id)
     batch.delete(docRef)
   })
-  
+
   await batch.commit()
 }

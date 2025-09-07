@@ -1,16 +1,16 @@
 // Simple store for clothing types using Firebase
 import { ref, watch } from 'vue'
 import { db } from '../firebase'
-import { 
-  collection, 
-  doc, 
-  getDocs, 
-  addDoc, 
-  deleteDoc, 
-  updateDoc, 
-  query, 
-  where, 
-  orderBy 
+import {
+  collection,
+  doc,
+  getDocs,
+  addDoc,
+  deleteDoc,
+  updateDoc,
+  query,
+  where,
+  orderBy
 } from 'firebase/firestore'
 import { useAuthStore } from './auth'
 
@@ -42,17 +42,17 @@ async function loadTypes() {
   try {
     const userId = getCurrentUserId()
     const q = query(
-      collection(db, COLLECTION_NAME), 
+      collection(db, COLLECTION_NAME),
       where('userId', '==', userId),
       orderBy('name')
     )
-    
+
     const querySnapshot = await getDocs(q)
     const savedTypes = querySnapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
     })) as ClothingType[]
-    
+
     types.value = savedTypes.length ? savedTypes : await createDefaultTypes()
   } catch (error) {
     console.error('Error loading types:', error)
@@ -63,7 +63,7 @@ async function loadTypes() {
 async function createDefaultTypes(): Promise<ClothingType[]> {
   const userId = getCurrentUserId()
   const createdTypes: ClothingType[] = []
-  
+
   for (const type of defaultTypes) {
     try {
       const docRef = await addDoc(collection(db, COLLECTION_NAME), {
@@ -79,7 +79,7 @@ async function createDefaultTypes(): Promise<ClothingType[]> {
       console.error('Error creating default type:', error)
     }
   }
-  
+
   return createdTypes
 }
 
@@ -106,13 +106,13 @@ export async function addType(name: string) {
       name,
       userId
     })
-    
+
     const newType = {
       id: docRef.id,
       name,
       userId
     }
-    
+
     types.value.push(newType)
   } catch (error) {
     console.error('Error adding type:', error)
@@ -149,7 +149,7 @@ export async function resetTypes() {
     for (const type of types.value) {
       await deleteDoc(doc(db, COLLECTION_NAME, type.id))
     }
-    
+
     // Create default types
     types.value = await createDefaultTypes()
   } catch (error) {
