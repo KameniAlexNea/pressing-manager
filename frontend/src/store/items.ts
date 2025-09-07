@@ -236,6 +236,46 @@ export async function updateStatus(id: string, status: ClothingItem['status']): 
   }
 }
 
+export async function updateItemsList(id: string, items: ItemLine[]): Promise<ClothingItem | undefined> {
+  try {
+    // First check if item exists and is not delivered
+    const currentItem = await getById(id)
+    if (!currentItem) {
+      throw new Error('Article non trouvé')
+    }
+    if (currentItem.status === 'delivered') {
+      throw new Error('Impossible de modifier un article déjà livré')
+    }
+
+    // Clean items data (remove undefined values)
+    const cleanedItems = items
+      .filter(item => item.type && item.type.trim()) // Only include items with valid type
+      .map(item => {
+        const cleanItem: any = {
+          type: item.type.trim(),
+          qty: item.qty
+        }
+        if (item.notes && item.notes.trim()) {
+          cleanItem.notes = item.notes.trim()
+        }
+        return cleanItem
+      })
+
+    if (cleanedItems.length === 0) {
+      throw new Error('Au moins un article doit être spécifié')
+    }
+
+    const docRef = doc(db, COLLECTION_NAME, id)
+    await updateDoc(docRef, { items: cleanedItems })
+
+    // Return updated item
+    return await getById(id)
+  } catch (error) {
+    console.error('Error updating items list:', error)
+    throw error
+  }
+}
+
 export async function getStats() {
   const items = await getAll()
 

@@ -37,13 +37,55 @@
           </a-descriptions>
 
           <div v-if="item.items && item.items.length" style="margin-top: 16px;">
-            <strong>Articles :</strong>
-            <a-list size="small">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <strong>Articles :</strong>
+              <a-button v-if="!isEditing && item.status !== 'delivered'" 
+                size="small" 
+                @click="startEditing"
+                :disabled="loading">
+                Modifier
+              </a-button>
+            </div>
+
+            <!-- View mode -->
+            <a-list v-if="!isEditing" size="small">
               <a-list-item v-for="(line, i) in item.items" :key="i">
                 {{ line.qty }} × {{ line.type }}
                 <span v-if="line.notes" style="color: #888; margin-left: 8px;">({{ line.notes }})</span>
               </a-list-item>
             </a-list>
+
+            <!-- Edit mode -->
+            <div v-else>
+              <div v-for="(editItem, idx) in editingItems" :key="idx" class="edit-item-row">
+                <a-select v-model:value="editItem.type" placeholder="Type" style="flex: 2;">
+                  <a-select-option v-for="t in types" :key="t.id" :value="t.name">{{ t.name }}</a-select-option>
+                </a-select>
+                <a-input-number v-model:value="editItem.qty" :min="1" placeholder="Qté" style="flex: 1;" />
+                <a-input v-model:value="editItem.notes" placeholder="Note" style="flex: 2;" />
+                <a-button danger @click="removeEditItem(idx)" :disabled="editingItems.length === 1" size="small">
+                  <template #icon>
+                    <DeleteOutlined />
+                  </template>
+                </a-button>
+              </div>
+              
+              <a-button type="dashed" block @click="addEditItem" style="margin-top: 8px; margin-bottom: 16px;">
+                <template #icon>
+                  <PlusOutlined />
+                </template>
+                Ajouter un article
+              </a-button>
+
+              <a-space>
+                <a-button type="primary" @click="saveItemsChanges" :loading="loading">
+                  Sauvegarder
+                </a-button>
+                <a-button @click="cancelEditing" :disabled="loading">
+                  Annuler
+                </a-button>
+              </a-space>
+            </div>
           </div>
 
           <a-space style="margin-top: 16px; width: 100%; justify-content: center;">
@@ -63,10 +105,11 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { getById, updateStatus, type ClothingItem, type ItemLine } from '../store/items'
+import { getById, updateStatus, updateItemsList, type ClothingItem, type ItemLine } from '../store/items'
+import { getTypes } from '../store/types'
 import { useFormatting } from '../composables/useFormatting'
 import { message } from 'ant-design-vue'
-
+import { PlusOutlined, DeleteOutlined } from '@ant-design/icons-vue'
 
 const code = ref('')
 const item = ref<ClothingItem | undefined>()
@@ -74,6 +117,11 @@ const loading = ref(false)
 const searched = ref(false)
 const route = useRoute()
 const { formatDate, statusColor } = useFormatting()
+
+// Editing state
+const isEditing = ref(false)
+const editingItems = ref<ItemLine[]>([])
+const types = getTypes()
 
 onMounted(() => {
   if (route.query.id && typeof route.query.id === 'string') {
@@ -125,6 +173,63 @@ async function markDelivered() {
   await updateAndRefresh(item.value.id, 'delivered');
 }
 
+// Editing functions
+function startEditing() {
+  if (!item.value?.items) return
+  // Clone the current items for editing
+  editingItems.value = item.value.items.map(i => ({
+    type: i.type,
+    qty: i.qty,
+    notes: i.notes || ''
+  }))
+  isEditing.value = true
+}
+
+function cancelEditing() {
+  isEditing.value = false
+  editingItems.value = []
+}
+
+function addEditItem() {
+  editingItems.value.push({
+    type: types.value[0]?.name || '',
+    qty: 1,
+    notes: ''
+  })
+}
+
+function removeEditItem(index: number) {
+  if (editingItems.value.length > 1) {
+    editingItems.value.splice(index, 1)
+  }
+}
+
+async function saveItemsChanges() {
+  if (!item.value) return
+  
+  // Validate at least one valid item
+  const validItems = editingItems.value.filter(i => i.type && i.type.trim())
+  if (validItems.length === 0) {
+    message.warning('Au moins un article doit être spécifié.')
+    return
+  }
+
+  loading.value = true
+  try {
+    const updatedItem = await updateItemsList(item.value.id, editingItems.value)
+    if (updatedItem) {
+      item.value = updatedItem
+      isEditing.value = false
+      editingItems.value = []
+      message.success('Articles mis à jour avec succès.')
+    }
+  } catch (error: any) {
+    message.error(error.message || 'Erreur lors de la mise à jour des articles.')
+  } finally {
+    loading.value = false
+  }
+}
+
 
 </script>
 
@@ -143,5 +248,12 @@ async function markDelivered() {
   max-height: 250px;
   border-radius: 8px;
   border: 1px solid #f0f0f0;
+}
+
+.edit-item-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
 }
 </style>
