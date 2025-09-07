@@ -131,8 +131,8 @@ async function performSearch() {
   item.value = undefined
 
   try {
-    // If searching by exact code, try to get single item first
-    if (searchParams.value.code && !searchParams.value.owner && !searchParams.value.status) {
+    // If searching by code (any code), try to get single item first
+    if (searchParams.value.code) {
       const singleResult = await getById(searchParams.value.code)
       if (singleResult) {
         item.value = singleResult

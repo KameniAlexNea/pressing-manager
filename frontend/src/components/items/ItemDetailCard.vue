@@ -111,29 +111,21 @@
         </template>
 
         <a-skeleton :loading="loading" active>
-            <div v-if="item.image" class="item-image-wrapper">
-                <img :src="item.image" alt="Photo vêtement" class="item-image" />
-            </div>
+            <img v-if="item.image" :src="item.image" alt="Photo vêtement" class="item-image" />
 
             <a-descriptions :column="1" size="small" bordered>
                 <a-descriptions-item label="Propriétaire"><strong>{{ item.owner }}</strong></a-descriptions-item>
                 <a-descriptions-item label="Contact">{{ item.contact || 'N/A' }}</a-descriptions-item>
                 <a-descriptions-item label="Prix">{{ item.price }} FCFA</a-descriptions-item>
-                <a-descriptions-item label="Montant Payé" v-if="item.amountGiven">{{ item.amountGiven }}
-                    FCFA</a-descriptions-item>
-                <a-descriptions-item label="Monnaie" v-if="item.amountGiven && item.amountGiven >= item.price">
-                    {{ item.amountGiven - item.price }} FCFA
-                </a-descriptions-item>
+                <a-descriptions-item v-if="item.amountGiven" label="Montant Payé">{{ item.amountGiven }} FCFA</a-descriptions-item>
+                <a-descriptions-item v-if="item.amountGiven && item.amountGiven > item.price" label="Monnaie">{{ item.amountGiven - item.price }} FCFA</a-descriptions-item>
                 <a-descriptions-item label="Reçu le">{{ formatDate(item.date_received) }}</a-descriptions-item>
-                <a-descriptions-item v-if="item.date_promised" label="Promis pour le">{{ formatDate(item.date_promised)
-                    }}</a-descriptions-item>
-                <a-descriptions-item v-if="item.date_cleaned" label="Nettoyé le">{{ formatDate(item.date_cleaned)
-                    }}</a-descriptions-item>
-                <a-descriptions-item v-if="item.date_delivered" label="Livré le">{{ formatDate(item.date_delivered)
-                    }}</a-descriptions-item>
+                <a-descriptions-item v-if="item.date_promised" label="Promis pour le">{{ formatDate(item.date_promised) }}</a-descriptions-item>
+                <a-descriptions-item v-if="item.date_cleaned" label="Nettoyé le">{{ formatDate(item.date_cleaned) }}</a-descriptions-item>
+                <a-descriptions-item v-if="item.date_delivered" label="Livré le">{{ formatDate(item.date_delivered) }}</a-descriptions-item>
             </a-descriptions>
 
-            <div v-if="item.items && item.items.length" class="items-section">
+            <div v-if="item.items?.length" class="items-section">
                 <div class="items-header">
                     <strong>Articles :</strong>
                     <a-button v-if="showActions && !isEditing && item.status !== 'delivered'" size="small"
@@ -249,59 +241,25 @@ const deadlineInfo = computed(() => {
         return null
     }
 
-    const promisedDate = dayjs(props.item.date_promised)
-    const today = dayjs()
-    const daysLeft = promisedDate.diff(today, 'day')
+    const daysLeft = dayjs(props.item.date_promised).diff(dayjs(), 'day')
 
     if (daysLeft < 0) {
-        return {
-            text: `En retard de ${Math.abs(daysLeft)} jour(s)`,
-            color: 'error',
-            isOverdue: true
-        }
-    } else if (daysLeft === 0) {
-        return {
-            text: 'À livrer aujourd\'hui',
-            color: 'warning',
-            isOverdue: false
-        }
-    } else if (daysLeft === 1) {
-        return {
-            text: 'À livrer demain',
-            color: 'warning',
-            isOverdue: false
-        }
+        return { text: `En retard de ${Math.abs(daysLeft)} jour(s)`, color: 'error', isOverdue: true }
+    } else if (daysLeft <= 1) {
+        return { text: daysLeft === 0 ? 'À livrer aujourd\'hui' : 'À livrer demain', color: 'warning', isOverdue: false }
     } else if (daysLeft <= 3) {
-        return {
-            text: `${daysLeft} jours restants`,
-            color: 'orange',
-            isOverdue: false
-        }
-    } else {
-        return {
-            text: `${daysLeft} jours restants`,
-            color: 'blue',
-            isOverdue: false
-        }
+        return { text: `${daysLeft} jours restants`, color: 'orange', isOverdue: false }
     }
+    return { text: `${daysLeft} jours restants`, color: 'blue', isOverdue: false }
 })
 
 function getStatusText(status: string): string {
-    const statusMap = {
-        'received': 'Reçu',
-        'cleaned': 'Nettoyé',
-        'delivered': 'Livré'
-    }
-    return statusMap[status as keyof typeof statusMap] || status
+    return { 'received': 'Reçu', 'cleaned': 'Nettoyé', 'delivered': 'Livré' }[status] || status
 }
 
 function startEditing() {
     if (!props.item?.items) return
-    editingItems.value = props.item.items.map(i => ({
-        type: i.type,
-        qty: i.qty,
-        notes: i.notes || ''
-    }))
+    editingItems.value = props.item.items.map(i => ({ type: i.type, qty: i.qty, notes: i.notes || '' }))
     isEditing.value = true
 }
 
@@ -311,24 +269,18 @@ function cancelEditing() {
 }
 
 function addEditItem() {
-    editingItems.value.push({
-        type: types.value[0]?.name || '',
-        qty: 1,
-        notes: ''
-    })
+    editingItems.value.push({ type: types.value[0]?.name || '', qty: 1, notes: '' })
 }
 
 function removeEditItem(index: number) {
-    if (editingItems.value.length > 1) {
-        editingItems.value.splice(index, 1)
-    }
+    if (editingItems.value.length > 1) editingItems.value.splice(index, 1)
 }
 
 async function saveItemsChanges() {
     if (!props.item) return
 
-    const validItems = editingItems.value.filter(i => i.type && i.type.trim())
-    if (validItems.length === 0) {
+    const validItems = editingItems.value.filter(i => i.type?.trim())
+    if (!validItems.length) {
         message.warning('Au moins un article doit être spécifié.')
         return
     }
@@ -341,50 +293,45 @@ async function saveItemsChanges() {
 
 <style scoped>
 .item-detail-card {
-    max-width: 800px;
-    margin: 0 auto;
-}
-
-.item-image-wrapper {
-    text-align: center;
-    margin-bottom: 16px;
+  max-width: 800px;
+  margin: 0 auto;
 }
 
 .item-image {
-    max-width: 100%;
-    max-height: 250px;
-    border-radius: 8px;
-    border: 1px solid #f0f0f0;
+  max-width: 100%;
+  max-height: 250px;
+  border-radius: 8px;
+  border: 1px solid #f0f0f0;
 }
 
 .items-section {
-    margin-top: 16px;
+  margin-top: 16px;
 }
 
 .items-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
 }
 
 .item-notes {
-    color: #888;
-    margin-left: 8px;
+  color: #888;
+  margin-left: 8px;
 }
 
 .edit-mode {
-    border: 1px solid #f0f0f0;
-    border-radius: 6px;
-    padding: 12px;
-    margin-top: 8px;
+  border: 1px solid #f0f0f0;
+  border-radius: 6px;
+  padding: 12px;
+  margin-top: 8px;
 }
 
 .edit-item-row {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    margin-bottom: 8px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
 }
 
 .status-actions {
@@ -393,7 +340,7 @@ async function saveItemsChanges() {
   justify-content: center;
 }
 
-/* Mobile optimizations for list mode */
+/* Mobile optimizations */
 @media (max-width: 768px) {
   .item-card {
     padding: 12px 8px;
@@ -458,29 +405,6 @@ async function saveItemsChanges() {
   }
 
   .deadline-tag {
-    font-size: 11px;
-  }
-}
-
-@media (max-width: 480px) {
-  .item-card {
-    padding: 8px 6px;
-  }
-
-  .item-link {
-    font-size: 13px;
-  }
-
-  .item-description {
-    font-size: 12px;
-  }
-
-  .detail-item {
-    font-size: 11px;
-  }
-
-  .price-info,
-  .contact-info {
     font-size: 11px;
   }
 }
