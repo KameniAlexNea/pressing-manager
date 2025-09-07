@@ -8,14 +8,16 @@
         :row-key="'id'"
       >
         <template #renderItem="{ item }">
-          <ItemCard 
+          <ItemDetailCard 
             :item="item"
             :show-status-actions="showStatusActions"
             :show-deadline="showDeadlines"
+            :list-mode="true"
             :loading="actionLoading === item.id"
             @view="(id) => $emit('view', id)"
             @status-change="handleStatusChange"
             @image-preview="handleImagePreview"
+            @save-items="handleSaveItems"
           >
             <template #actions="{ item: cardItem }" v-if="$slots.actions">
               <slot name="actions" :item="cardItem" />
@@ -23,7 +25,7 @@
             <template #extra="{ item: cardItem }" v-if="$slots.extra">
               <slot name="extra" :item="cardItem" />
             </template>
-          </ItemCard>
+          </ItemDetailCard>
         </template>
       </a-list>
 
@@ -66,8 +68,9 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { message } from 'ant-design-vue'
-import ItemCard from './ItemCard.vue'
+import ItemDetailCard from './ItemDetailCard.vue'
 import { useItemsStore } from '../../store/itemsStore'
+import { updateItemsList } from '../../store/items'
 import type { ClothingItem } from '../../store/itemsStore'
 
 interface Props {
@@ -104,6 +107,7 @@ const emit = defineEmits<{
   statusChange: [id: string, status: 'cleaned' | 'delivered']
   imagePreview: [imageUrl: string]
   create: []
+  saveItems: [id: string, items: any[]]
 }>()
 
 const itemsStore = useItemsStore()
@@ -155,6 +159,17 @@ function handleImagePreview(imageUrl: string) {
   previewImage.value = imageUrl
   previewVisible.value = true
   emit('imagePreview', imageUrl)
+}
+
+async function handleSaveItems(id: string, items: any[]) {
+  try {
+    await updateItemsList(id, items)
+    message.success('Articles mis à jour avec succès')
+    emit('saveItems', id, items)
+  } catch (error) {
+    console.error('Error updating items:', error)
+    message.error('Erreur lors de la mise à jour des articles')
+  }
 }
 
 // Expose methods for parent components
