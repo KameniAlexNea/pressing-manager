@@ -242,3 +242,5 @@ vuejs_template
 node_modules/
 frontend/android
 firestore.rules
+frontend/tsconfig.node.json
+frontend/tsconfig.json

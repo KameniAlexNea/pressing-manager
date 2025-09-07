@@ -75,4 +75,4 @@ export const handleRedirectResult = async () => {
   }
 };
 
-export { auth, db, onAuthStateChanged, type User };
+export { auth, db, analytics, onAuthStateChanged, type User };
