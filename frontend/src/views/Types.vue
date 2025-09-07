@@ -68,17 +68,25 @@ const editingId = ref<string | null>(null)
 const editingName = ref('')
 const editingInput = ref<HTMLInputElement | null>(null)
 
-function onAdd() {
+async function onAdd() {
   if (newType.value.trim()) {
-    addType(newType.value.trim())
-    message.success(`"${newType.value.trim()}" a été ajouté.`)
-    newType.value = ''
+    try {
+      await addType(newType.value.trim())
+      message.success(`"${newType.value.trim()}" a été ajouté.`)
+      newType.value = ''
+    } catch (error) {
+      message.error('Erreur lors de l\'ajout du type.')
+    }
   }
 }
 
-function remove(id: string) {
-  removeType(id)
-  message.info('Type supprimé.')
+async function remove(id: string) {
+  try {
+    await removeType(id)
+    message.info('Type supprimé.')
+  } catch (error) {
+    message.error('Erreur lors de la suppression du type.')
+  }
 }
 
 function startEditing(item: { id: string, name: string }) {
@@ -89,16 +97,24 @@ function startEditing(item: { id: string, name: string }) {
   })
 }
 
-function onEdit(item: { id: string, name: string }) {
+async function onEdit(item: { id: string, name: string }) {
   if (editingName.value.trim() && editingName.value.trim() !== item.name) {
-    editType(item.id, editingName.value.trim())
-    message.success('Type mis à jour.')
+    try {
+      await editType(item.id, editingName.value.trim())
+      message.success('Type mis à jour.')
+    } catch (error) {
+      message.error('Erreur lors de la mise à jour du type.')
+    }
   }
   editingId.value = null
 }
 
-function reset() {
-  resetTypes()
-  message.info('La liste des types a été réinitialisée.')
+async function reset() {
+  try {
+    await resetTypes()
+    message.info('La liste des types a été réinitialisée.')
+  } catch (error) {
+    message.error('Erreur lors de la réinitialisation des types.')
+  }
 }
 </script>

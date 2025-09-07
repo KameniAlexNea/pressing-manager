@@ -1,4 +1,20 @@
 import { useAuthStore } from './auth'
+import { db } from '../firebase'
+import { 
+  collection, 
+  doc, 
+  getDocs, 
+  getDoc, 
+  addDoc, 
+  updateDoc, 
+  deleteDoc, 
+  query, 
+  where, 
+  orderBy,
+  writeBatch,
+  serverTimestamp,
+  Timestamp 
+} from 'firebase/firestore'
 import dayjs from 'dayjs'
 
 export type ItemLine = {
@@ -22,63 +38,121 @@ export type ClothingItem = {
   date_promised?: string | null
   image?: string | null
   amountGiven?: number | null
+  userId?: string // Add userId to associate with the authenticated user
 }
 
 export type ClothingItemWithDeadline = ClothingItem & { days_left: number | null }
 
-const API_BASE = '/api'
+// Collection name
+const COLLECTION_NAME = 'clothing_items'
 
-async function apiRequest(endpoint: string, options: RequestInit = {}) {
+// Helper function to get current user ID
+function getCurrentUserId(): string {
   const authStore = useAuthStore()
-  const authHeaders = authStore.getAuthHeaders()
-  
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json'
+  if (!authStore.user?.uid) {
+    throw new Error('User not authenticated')
   }
-  
-  // Add any existing headers from options
-  if (options.headers) {
-    Object.assign(headers, options.headers)
+  return authStore.user.uid
+}
+
+// Convert Firestore timestamp to ISO string
+function timestampToString(timestamp: any): string {
+  if (!timestamp) return ''
+  if (timestamp.toDate) {
+    return timestamp.toDate().toISOString()
   }
-  
-  // Only add auth header if it exists
-  if (authHeaders && authHeaders.Authorization) {
-    headers.Authorization = authHeaders.Authorization
+  if (timestamp instanceof Date) {
+    return timestamp.toISOString()
   }
-  
-  const response = await fetch(`${API_BASE}${endpoint}`, {
-    ...options,
-    headers
-  })
-  
-  if (!response.ok) {
-    throw new Error(`API Error: ${response.statusText}`)
-  }
-  
-  return response.json()
+  return timestamp.toString()
 }
 
 export async function getAll(): Promise<ClothingItem[]> {
-  return apiRequest('/items')
+  const userId = getCurrentUserId()
+  const q = query(
+    collection(db, COLLECTION_NAME), 
+    where('userId', '==', userId),
+    orderBy('date_received', 'desc')
+  )
+  
+  const querySnapshot = await getDocs(q)
+  return querySnapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data(),
+    date_received: timestampToString(doc.data().date_received),
+    date_cleaned: doc.data().date_cleaned ? timestampToString(doc.data().date_cleaned) : null,
+    date_delivered: doc.data().date_delivered ? timestampToString(doc.data().date_delivered) : null,
+    date_promised: doc.data().date_promised ? timestampToString(doc.data().date_promised) : null,
+  })) as ClothingItem[]
 }
 
 export async function createItem(data: Partial<ClothingItem>): Promise<ClothingItem> {
-  return apiRequest('/items', {
-    method: 'POST',
-    body: JSON.stringify(data)
-  })
+  const userId = getCurrentUserId()
+  const itemData = {
+    ...data,
+    userId,
+    status: 'received' as const,
+    date_received: data.date_received ? new Date(data.date_received) : new Date(),
+    date_promised: data.date_promised ? new Date(data.date_promised) : null,
+    date_cleaned: null,
+    date_delivered: null,
+  }
+  
+  const docRef = await addDoc(collection(db, COLLECTION_NAME), itemData)
+  
+  return {
+    id: docRef.id,
+    ...data,
+    userId,
+    status: 'received',
+    date_received: itemData.date_received.toISOString(),
+    date_promised: itemData.date_promised?.toISOString() || null,
+    date_cleaned: null,
+    date_delivered: null,
+  } as ClothingItem
 }
 
 export async function getById(id: string): Promise<ClothingItem | undefined> {
   try {
-    return await apiRequest(`/items/${id}`)
-  } catch {
+    const docRef = doc(db, COLLECTION_NAME, id)
+    const docSnap = await getDoc(docRef)
+    
+    if (docSnap.exists()) {
+      const data = docSnap.data()
+      return {
+        id: docSnap.id,
+        ...data,
+        date_received: timestampToString(data.date_received),
+        date_cleaned: data.date_cleaned ? timestampToString(data.date_cleaned) : null,
+        date_delivered: data.date_delivered ? timestampToString(data.date_delivered) : null,
+        date_promised: data.date_promised ? timestampToString(data.date_promised) : null,
+      } as ClothingItem
+    }
+    return undefined
+  } catch (error) {
+    console.error('Error getting item:', error)
     return undefined
   }
 }
 
 export async function getByOwner(owner: string): Promise<ClothingItem[]> {
-  return apiRequest(`/items?owner=${encodeURIComponent(owner)}`)
+  const userId = getCurrentUserId()
+  const q = query(
+    collection(db, COLLECTION_NAME), 
+    where('userId', '==', userId),
+    where('owner', '==', owner),
+    orderBy('date_received', 'desc')
+  )
+  
+  const querySnapshot = await getDocs(q)
+  return querySnapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data(),
+    date_received: timestampToString(doc.data().date_received),
+    date_cleaned: doc.data().date_cleaned ? timestampToString(doc.data().date_cleaned) : null,
+    date_delivered: doc.data().date_delivered ? timestampToString(doc.data().date_delivered) : null,
+    date_promised: doc.data().date_promised ? timestampToString(doc.data().date_promised) : null,
+  })) as ClothingItem[]
 }
 
 export async function getPendingOlderThan(days: number): Promise<ClothingItem[]> {
@@ -88,38 +162,93 @@ export async function getPendingOlderThan(days: number): Promise<ClothingItem[]>
 }
 
 export async function getWithDeadlines(owner?: string): Promise<ClothingItemWithDeadline[]> {
-  const params = owner ? `?owner=${encodeURIComponent(owner)}` : ''
-  return apiRequest(`/items/deadlines${params}`)
+  const items = owner ? await getByOwner(owner) : await getAll()
+  
+  return items.map(item => {
+    let days_left: number | null = null
+    if (item.date_promised) {
+      const promisedDate = dayjs(item.date_promised)
+      const today = dayjs()
+      days_left = promisedDate.diff(today, 'day')
+    }
+    
+    return {
+      ...item,
+      days_left
+    }
+  })
 }
 
 export async function updateStatus(id: string, status: ClothingItem['status']): Promise<ClothingItem | undefined> {
   try {
-    return await apiRequest(`/items/${id}/status`, {
-      method: 'PATCH',
-      body: JSON.stringify(status)
-    })
-  } catch {
+    const docRef = doc(db, COLLECTION_NAME, id)
+    const updateData: any = { status }
+    
+    // Set timestamp based on status
+    if (status === 'cleaned') {
+      updateData.date_cleaned = new Date()
+    } else if (status === 'delivered') {
+      updateData.date_delivered = new Date()
+    }
+    
+    await updateDoc(docRef, updateData)
+    
+    // Return updated item
+    return await getById(id)
+  } catch (error) {
+    console.error('Error updating status:', error)
     return undefined
   }
 }
 
 export async function getStats() {
-  return apiRequest('/stats')
+  const items = await getAll()
+  
+  return {
+    total_items: items.length,
+    received_items: items.filter(i => i.status === 'received').length,
+    cleaned_items: items.filter(i => i.status === 'cleaned').length,
+    delivered_items: items.filter(i => i.status === 'delivered').length,
+    pending_items: items.filter(i => i.status !== 'delivered').length,
+  }
 }
 
 export async function exportItems(): Promise<string> {
-  const data = await apiRequest('/items/export')
-  return JSON.stringify(data, null, 2)
+  const items = await getAll()
+  return JSON.stringify(items, null, 2)
 }
 
 export async function importItems(json: string): Promise<void> {
-  const data = JSON.parse(json)
-  await apiRequest('/items/import', {
-    method: 'POST',
-    body: JSON.stringify(data)
+  const data = JSON.parse(json) as ClothingItem[]
+  const userId = getCurrentUserId()
+  
+  const batch = writeBatch(db)
+  
+  data.forEach(item => {
+    const docRef = doc(collection(db, COLLECTION_NAME))
+    const itemData = {
+      ...item,
+      userId,
+      date_received: new Date(item.date_received),
+      date_cleaned: item.date_cleaned ? new Date(item.date_cleaned) : null,
+      date_delivered: item.date_delivered ? new Date(item.date_delivered) : null,
+      date_promised: item.date_promised ? new Date(item.date_promised) : null,
+    }
+    delete (itemData as any).id // Remove id as it will be auto-generated
+    batch.set(docRef, itemData)
   })
+  
+  await batch.commit()
 }
 
 export async function clearItems(): Promise<void> {
-  await apiRequest('/items/clear', { method: 'POST' })
+  const items = await getAll()
+  const batch = writeBatch(db)
+  
+  items.forEach(item => {
+    const docRef = doc(db, COLLECTION_NAME, item.id)
+    batch.delete(docRef)
+  })
+  
+  await batch.commit()
 }

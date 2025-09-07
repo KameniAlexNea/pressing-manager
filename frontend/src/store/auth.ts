@@ -7,6 +7,7 @@ import {
   signInWithGoogle,
   logout as firebaseLogout, 
   onAuthStateChanged,
+  handleRedirectResult,
   type User
 } from '../firebase'
 
@@ -24,19 +25,7 @@ export const useAuthStore = defineStore('auth', () => {
         if (firebaseUser) {
           user.value = firebaseUser
           token.value = await firebaseUser.getIdToken()
-          // Send token to backend for verification
-          try {
-            const response = await fetch('/api/login', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ idToken: token.value })
-            })
-            if (!response.ok) {
-              console.error('Backend login failed')
-            }
-          } catch (error) {
-            console.error('Backend login error:', error)
-          }
+          // Note: No backend API call needed when using Firebase directly
         } else {
           user.value = null
           token.value = null
@@ -107,6 +96,16 @@ export const useAuthStore = defineStore('auth', () => {
     return token.value ? { 'Authorization': `Bearer ${token.value}` } : {}
   }
 
+  // Handle redirect result (for mobile Google sign-in)
+  const handleAuthRedirectResult = async () => {
+    try {
+      return await handleRedirectResult()
+    } catch (error: any) {
+      console.error('Redirect result error:', error)
+      throw error
+    }
+  }
+
   return {
     user,
     loading,
@@ -117,6 +116,7 @@ export const useAuthStore = defineStore('auth', () => {
     register,
     loginWithGoogle,
     logout,
-    getAuthHeaders
+    getAuthHeaders,
+    handleAuthRedirectResult
   }
 })
