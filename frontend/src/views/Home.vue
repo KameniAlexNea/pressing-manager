@@ -5,12 +5,14 @@
     <!-- Statistics Cards -->
     <a-row :gutter="[16, 16]">
       <a-col :xs="12" :sm="12" :md="6" v-for="card in cards" :key="card.title">
-        <a-card :title="card.title" :bordered="false" class="stat-card">
-          <div class="stat-icon" :style="{ color: card.color }">
-            <component :is="card.icon" />
+        <a-card :bordered="false" class="stat-card">
+          <div class="stat-content">
+            <component :is="card.icon" class="stat-icon" :style="{ color: card.color }" />
+            <div class="stat-info">
+              <div class="stat-title">{{ card.title }}</div>
+              <div class="stat-value" :style="{ color: card.color }">{{ card.value }}</div>
+            </div>
           </div>
-          <div class="stat-value" :style="{ color: card.color }">{{ card.value }}</div>
-          <div class="stat-subtitle">{{ card.subtitle }}</div>
         </a-card>
       </a-col>
     </a-row>
@@ -72,28 +74,24 @@ const cards = computed(() => {
     { 
       title: 'Total', 
       value: stats.total_items, 
-      subtitle: 'Articles',
       icon: AppstoreOutlined,
       color: '#1677ff'
     },
     { 
       title: 'Nettoyés', 
       value: stats.cleaned_items, 
-      subtitle: 'Articles',
       icon: CheckCircleOutlined,
       color: '#52c41a'
     },
     { 
       title: 'Livrés', 
       value: stats.delivered_items, 
-      subtitle: 'Articles',
       icon: GiftOutlined,
       color: '#13c2c2'
     },
     { 
       title: 'En attente', 
       value: stats.pending_items, 
-      subtitle: 'Articles',
       icon: ExclamationCircleOutlined,
       color: '#faad14'
     },
@@ -238,7 +236,7 @@ onMounted(() => {
 
 <style scoped>
 .stat-card {
-  text-align: center;
+  background-color: #f0f2f5;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   transition: all 0.3s ease;
@@ -248,32 +246,47 @@ onMounted(() => {
 .stat-card:hover {
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
   transform: translateY(-2px);
-  border-color: #f0f0f0;
+  border-color: #e6f7ff;
+}
+
+.stat-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .stat-icon {
-  font-size: 32px;
-  margin: 8px 0;
-  opacity: 0.8;
+  font-size: 28px;
+  flex-shrink: 0;
   transition: all 0.3s ease;
 }
 
 .stat-card:hover .stat-icon {
   transform: scale(1.1);
-  opacity: 1;
+}
+
+.stat-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.stat-title {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
 }
 
 .stat-value {
-  font-size: 32px;
+  font-size: 24px;
   font-weight: 700;
-  margin: 12px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   transition: all 0.3s ease;
-}
-
-.stat-subtitle {
-  color: #666;
-  font-size: 14px;
-  font-weight: 500;
 }
 
 .chart-container {
@@ -284,11 +297,15 @@ onMounted(() => {
 
 @media (max-width: 768px) {
   .stat-icon {
-    font-size: 28px;
+    font-size: 24px;
+  }
+
+  .stat-title {
+    font-size: 13px;
   }
 
   .stat-value {
-    font-size: 26px;
+    font-size: 20px;
   }
 
   .chart-container {
@@ -298,11 +315,15 @@ onMounted(() => {
 
 @media (max-width: 576px) {
   .stat-icon {
-    font-size: 24px;
+    font-size: 22px;
+  }
+
+  .stat-title {
+    font-size: 12px;
   }
 
   .stat-value {
-    font-size: 22px;
+    font-size: 18px;
   }
 }
 </style>
