@@ -161,7 +161,7 @@ type FormT = {
 
 const defaultPromisedDays = 7
 const createDefaultFormState = (): FormT => ({
-    items: [{ type: types.value[0]?.name || '', qty: 1 }],
+    items: [{ type: types.value[0]?.name || '', qty: 1, notes: '' }],
     owner: '',
     contact: '',
     price: 0,
@@ -174,7 +174,7 @@ const createDefaultFormState = (): FormT => ({
 const form = reactive<FormT>(createDefaultFormState())
 
 function addItem() {
-    form.items.push({ type: types.value[0]?.name || '', qty: 1 })
+    form.items.push({ type: types.value[0]?.name || '', qty: 1, notes: '' })
 }
 function removeItem(idx: number) {
     if (form.items.length > 1) form.items.splice(idx, 1)
@@ -210,13 +210,32 @@ async function onSubmit() {
         return;
     }
     
+    // Check if there's at least one valid item
+    const validItems = form.items.filter(i => i.type && i.type.trim())
+    if (validItems.length === 0) {
+        message.warning('Veuillez ajouter au moins un article avec un type sélectionné.')
+        return;
+    }
+    
     loading.value = true;
     try {
         console.log('Submitting form data:', form)
         
         // Prepare data and remove undefined values
         const itemData: any = {
-            items: form.items.map(i => ({ type: i.type, qty: i.qty, notes: i.notes })),
+            items: form.items
+                .filter(i => i.type && i.type.trim()) // Only include items with a valid type
+                .map(i => {
+                    const cleanItem: any = {
+                        type: i.type.trim(),
+                        qty: i.qty
+                    }
+                    // Only add notes if it has a value
+                    if (i.notes && i.notes.trim()) {
+                        cleanItem.notes = i.notes.trim()
+                    }
+                    return cleanItem
+                }),
             owner: form.owner,
             price: form.price,
         }

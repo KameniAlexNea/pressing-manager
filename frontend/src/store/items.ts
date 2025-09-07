@@ -93,10 +93,25 @@ export async function createItem(data: Partial<ClothingItem>): Promise<ClothingI
     console.log('Creating item with userId:', userId)
     console.log('Item data:', data)
     
-    // Clean up undefined values - Firebase doesn't allow undefined
-    const cleanData = Object.fromEntries(
-      Object.entries(data).filter(([_, value]) => value !== undefined)
-    )
+    // Clean up undefined values recursively - Firebase doesn't allow undefined
+    function cleanObject(obj: any): any {
+      if (obj === null || obj === undefined) return null
+      if (Array.isArray(obj)) {
+        return obj.map(cleanObject)
+      }
+      if (typeof obj === 'object') {
+        const cleaned: any = {}
+        for (const [key, value] of Object.entries(obj)) {
+          if (value !== undefined) {
+            cleaned[key] = cleanObject(value)
+          }
+        }
+        return cleaned
+      }
+      return obj
+    }
+    
+    const cleanData = cleanObject(data)
     
     const itemData = {
       ...cleanData,
