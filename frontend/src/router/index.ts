@@ -29,17 +29,17 @@ const router = createRouter({
 })
 
 // Route guards
-router.beforeEach(async (to, from, next) => {
+router.beforeEach(async (to, _, next) => {
   const authStore = useAuthStore()
-  
+
   // Initialize auth if needed
   if (authStore.loading) {
     await authStore.initAuth()
   }
-  
+
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
   const requiresGuest = to.matched.some(record => record.meta.requiresGuest)
-  
+
   if (requiresAuth && !authStore.isAuthenticated) {
     next('/login')
   } else if (requiresGuest && authStore.isAuthenticated) {
