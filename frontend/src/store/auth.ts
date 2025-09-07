@@ -78,8 +78,12 @@ export const useAuthStore = defineStore('auth', () => {
   const loginWithGoogle = async () => {
     try {
       loading.value = true
-      const userCredential = await signInWithGoogle()
-      return userCredential.user
+      // Google sign-in is disabled on mobile. Only allow on web.
+      if ((window as any).Capacitor?.isNativePlatform) {
+        throw new Error('Connexion Google non disponible sur mobile.');
+      }
+      const userCredential = await signInWithGoogle();
+      return userCredential.user;
     } catch (error: any) {
       console.error('Google login error:', error)
       throw new Error(error.message || 'Google login failed')

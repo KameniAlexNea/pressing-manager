@@ -18,7 +18,7 @@
         
         <a-divider>ou</a-divider>
         
-        <a-form-item>
+        <a-form-item v-if="!isMobile">
           <a-button @click="handleGoogleLogin" block :loading="loading">
             <template #icon>
               <GoogleOutlined />
@@ -62,7 +62,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { reactive, ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../store/auth'
 import { message } from 'ant-design-vue'
@@ -72,6 +72,9 @@ const router = useRouter()
 const authStore = useAuthStore()
 const loading = ref(false)
 const showRegister = ref(false)
+
+// Detect mobile (basic user agent check)
+const isMobile = computed(() => /android|iphone|ipad|ipod/i.test(navigator.userAgent))
 
 const form = reactive({
   email: '',
