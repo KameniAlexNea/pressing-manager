@@ -35,10 +35,14 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// Only initialize analytics if running in a browser
+// Only initialize analytics if running in a browser and in production
 let analytics: ReturnType<typeof getAnalytics> | undefined;
-if (typeof window !== "undefined") {
-  analytics = getAnalytics(app);
+if (typeof window !== "undefined" && import.meta.env.PROD) {
+  try {
+    analytics = getAnalytics(app);
+  } catch (error) {
+    console.warn('Analytics initialization failed:', error);
+  }
 }
 
 // Google Auth Provider

@@ -23,7 +23,7 @@ onMounted(async () => {
     { title: 'Articles en attente', value: s.pending_items },
     { title: 'Articles nettoyés', value: s.cleaned_items },
     { title: 'Articles livrés', value: s.delivered_items },
-    { title: 'Revenu total', value: `${s.total_revenue} FCFA` },
+    { title: 'Revenu total', value: `${s.total_revenue || 0} FCFA` },
   ]
 })
 </script>

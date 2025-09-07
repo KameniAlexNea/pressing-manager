@@ -204,12 +204,19 @@ export async function updateStatus(id: string, status: ClothingItem['status']): 
 export async function getStats() {
   const items = await getAll()
   
+  // Calculate total revenue from all items
+  const total_revenue = items.reduce((sum, item) => {
+    const price = typeof item.price === 'number' ? item.price : 0
+    return sum + price
+  }, 0)
+  
   return {
     total_items: items.length,
     received_items: items.filter(i => i.status === 'received').length,
     cleaned_items: items.filter(i => i.status === 'cleaned').length,
     delivered_items: items.filter(i => i.status === 'delivered').length,
     pending_items: items.filter(i => i.status !== 'delivered').length,
+    total_revenue: total_revenue
   }
 }
 
