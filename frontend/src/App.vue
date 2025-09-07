@@ -1,9 +1,5 @@
 <template>
   <a-layout style="min-height: 100vh">
-    <!-- Show loading spinner while auth iimport { useRouter, useRoute } from 'vue-router'
-import { useAuthStore } from './store/auth'
-import { initializeTypes } from './store/types'
-import {nitializing -->
     <div v-if="authStore.loading" class="loading-container">
       <a-spin size="large" />
       <div style="margin-top: 16px;">Chargement...</div>
@@ -144,29 +140,29 @@ onMounted(async () => {
   console.log('App.vue mounted, initializing auth...')
   console.log('Firebase config check:', {
     apiKey: (import.meta as any).env.VITE_FIREBASE_API_KEY ? 'Present' : 'Missing',
-      projectId: (import.meta as any).env.VITE_FIREBASE_PROJECT_ID ? 'Present' : 'Missing',
-    })
-    
-    try {
-      await authStore.initAuth()
-      console.log('Auth initialized successfully')
-      
-      // Initialize types store after auth is ready
-      initializeTypes()
-      console.log('Types store initialized')
-    } catch (error) {
-      console.error('Auth initialization error:', error)
-    }
-    
-    // Handle redirect result (for Google Sign-In on mobile)
-    try {
-      if (typeof authStore.handleAuthRedirectResult === 'function') {
-        await authStore.handleAuthRedirectResult()
-      }
-    } catch (error) {
-      console.error('Redirect result handling error:', error)
-    }
+    projectId: (import.meta as any).env.VITE_FIREBASE_PROJECT_ID ? 'Present' : 'Missing',
   })
+
+  try {
+    await authStore.initAuth()
+    console.log('Auth initialized successfully')
+
+    // Initialize types store after auth is ready
+    initializeTypes()
+    console.log('Types store initialized')
+  } catch (error) {
+    console.error('Auth initialization error:', error)
+  }
+
+  // Handle redirect result (for Google Sign-In on mobile)
+  try {
+    if (typeof authStore.handleAuthRedirectResult === 'function') {
+      await authStore.handleAuthRedirectResult()
+    }
+  } catch (error) {
+    console.error('Redirect result handling error:', error)
+  }
+})
 
 watch(() => route.meta?.title as string | undefined, (title) => {
   if (title) document.title = `${title} - Pressing Manager`
