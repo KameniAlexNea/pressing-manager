@@ -58,11 +58,15 @@ async function load() {
   loading.value = true
   searched.value = true
   try {
+    console.log('Searching for owner:', owner.value)
     rows.value = await getByOwner(owner.value)
+    console.log('Search results:', rows.value)
+    console.log('Results length:', rows.value.length)
     if (rows.value.length === 0) {
       message.info('Aucun article trouvé pour ce propriétaire.')
     }
   } catch (e) {
+    console.error('Search error:', e)
     message.error('Erreur lors de la recherche.')
   } finally {
     loading.value = false

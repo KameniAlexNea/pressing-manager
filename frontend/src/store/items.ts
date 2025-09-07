@@ -69,6 +69,8 @@ function timestampToString(timestamp: any): string {
 
 export async function getAll(): Promise<ClothingItem[]> {
   const userId = getCurrentUserId()
+  console.log('Getting all items for userId:', userId)
+  
   const q = query(
     collection(db, COLLECTION_NAME), 
     where('userId', '==', userId),
@@ -76,6 +78,8 @@ export async function getAll(): Promise<ClothingItem[]> {
   )
   
   const querySnapshot = await getDocs(q)
+  console.log('Total items found:', querySnapshot.size)
+  
   return querySnapshot.docs.map(doc => ({
     id: doc.id,
     ...doc.data(),
@@ -137,6 +141,8 @@ export async function getById(id: string): Promise<ClothingItem | undefined> {
 
 export async function getByOwner(owner: string): Promise<ClothingItem[]> {
   const userId = getCurrentUserId()
+  console.log('Searching for items:', { owner, userId })
+  
   const q = query(
     collection(db, COLLECTION_NAME), 
     where('userId', '==', userId),
@@ -145,6 +151,9 @@ export async function getByOwner(owner: string): Promise<ClothingItem[]> {
   )
   
   const querySnapshot = await getDocs(q)
+  console.log('Query snapshot size:', querySnapshot.size)
+  console.log('Query docs:', querySnapshot.docs.map(doc => ({ id: doc.id, data: doc.data() })))
+  
   return querySnapshot.docs.map(doc => ({
     id: doc.id,
     ...doc.data(),
