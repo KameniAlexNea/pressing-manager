@@ -27,7 +27,6 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps } from 'vue'
 import { useFormatting } from '../../composables/useFormatting'
 
 type Row = { id: string; owner: string; date_promised?: string | null; days_left?: number | null }
