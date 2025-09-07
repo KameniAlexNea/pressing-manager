@@ -1,6 +1,16 @@
 <template>
   <a-card title="Recherche par Propriétaire" :bordered="false">
-    <GlobalSearch @search="onSearch" @clear="onClear" />
+    <a-input-search
+      v-model:value="owner"
+      placeholder="Entrez le nom du propriétaire..."
+      enter-button="Rechercher"
+      size="large"
+      allow-clear
+      @search="handleSearch"
+      @clear="handleClear"
+      :loading="loading"
+      class="search-input"
+    />
     <OwnerList v-if="searched" :rows="rows" :loading="loading" @view="viewItem" />
     <a-empty v-if="searched && !loading && rows.length === 0" description="Aucun article trouvé pour ce propriétaire." />
   </a-card>
@@ -13,7 +23,6 @@ import { ref } from 'vue'
 import { getByOwner, type ClothingItem } from '../store/items'
 import { useNavigation } from '../composables/useFormatting'
 import { message } from 'ant-design-vue'
-import GlobalSearch from '../components/common/GlobalSearch.vue'
 import OwnerList from '../components/items/OwnerList.vue'
 
 
@@ -50,14 +59,12 @@ function viewItem(id: string) {
   goToItem(id)
 }
 
-function onSearch(filters: any) {
-  // Use the free-text query as owner name for this view
-  owner.value = (filters?.query || '').trim()
+function handleSearch() {
   searched.value = false
   load()
 }
 
-function onClear() {
+function handleClear() {
   owner.value = ''
   rows.value = []
   searched.value = false
@@ -65,3 +72,9 @@ function onClear() {
 
 
 </script>
+
+<style scoped>
+.search-input {
+  margin-bottom: 16px;
+}
+</style>

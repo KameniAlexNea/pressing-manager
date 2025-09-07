@@ -46,18 +46,6 @@ export type ClothingItem = {
 
 export type ClothingItemWithDeadline = ClothingItem & { days_left: number | null }
 
-export interface SearchFilters {
-  query: string
-  status: string[]
-  itemType: string[]
-  dateReceivedFrom: string | null
-  dateReceivedTo: string | null
-  datePromisedFrom: string | null
-  datePromisedTo: string | null
-  priceMin: number | null
-  priceMax: number | null
-}
-
 export interface PaginationInfo {
   currentPage: number
   pageSize: number
@@ -70,11 +58,9 @@ export interface PaginationInfo {
 
 interface ItemsState {
   items: ClothingItem[]
-  filteredItems: ClothingItem[]
   currentItem: ClothingItem | null
   loading: boolean
   error: string | null
-  searchFilters: SearchFilters
   pagination: PaginationInfo
   lastFetch: number | null
 }
@@ -86,21 +72,9 @@ export const useItemsStore = defineStore('items', () => {
   // State
   const state = ref<ItemsState>({
     items: [],
-    filteredItems: [],
     currentItem: null,
     loading: false,
     error: null,
-    searchFilters: {
-      query: '',
-      status: [],
-      itemType: [],
-      dateReceivedFrom: null,
-      dateReceivedTo: null,
-      datePromisedFrom: null,
-      datePromisedTo: null,
-      priceMin: null,
-      priceMax: null
-    },
     pagination: {
       currentPage: 1,
       pageSize: 20,
@@ -115,13 +89,11 @@ export const useItemsStore = defineStore('items', () => {
 
   // Getters
   const items = computed(() => state.value.items)
-  const filteredItems = computed(() => state.value.filteredItems)
   const currentItem = computed(() => state.value.currentItem)
   const loading = computed(() => state.value.loading)
   const error = computed(() => state.value.error)
   const hasItems = computed(() => state.value.items.length > 0)
   const pagination = computed(() => state.value.pagination)
-  const searchFilters = computed(() => state.value.searchFilters)
   
   const stats = computed(() => {
     const total = state.value.items.length
@@ -249,9 +221,6 @@ export const useItemsStore = defineStore('items', () => {
 
       state.value.items = fetchedItems
       state.value.lastFetch = Date.now()
-      
-      // Apply current filters to fetched items
-      applyFilters()
 
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erreur lors du chargement des articles'
@@ -464,9 +433,6 @@ export const useItemsStore = defineStore('items', () => {
       // Add to local state
       state.value.items.unshift(newItem)
       state.value.currentItem = newItem
-      
-      // Apply filters to update filtered list
-      applyFilters()
 
       return newItem
 
@@ -514,9 +480,6 @@ export const useItemsStore = defineStore('items', () => {
           state.value.currentItem = updatedItem
         }
 
-        // Apply filters to update filtered list
-        applyFilters()
-
         return updatedItem
       }
 
@@ -530,95 +493,6 @@ export const useItemsStore = defineStore('items', () => {
     } finally {
       setLoading(false)
     }
-  }
-
-  function applyFilters() {
-    const filters = state.value.searchFilters
-    let filtered = [...state.value.items]
-
-    // Text search
-    if (filters.query) {
-      const query = filters.query.toLowerCase()
-      filtered = filtered.filter(item => 
-        item.owner.toLowerCase().includes(query) ||
-        item.id.toLowerCase().includes(query) ||
-        item.contact?.toLowerCase().includes(query) ||
-        item.description?.toLowerCase().includes(query) ||
-        item.notes?.toLowerCase().includes(query)
-      )
-    }
-
-    // Status filter
-    if (filters.status.length > 0) {
-      filtered = filtered.filter(item => filters.status.includes(item.status))
-    }
-
-    // Item type filter
-    if (filters.itemType.length > 0) {
-      filtered = filtered.filter(item => 
-        item.items?.some(i => filters.itemType.includes(i.type)) ||
-        filters.itemType.some(type => item.description?.includes(type))
-      )
-    }
-
-    // Date filters
-    if (filters.dateReceivedFrom) {
-      filtered = filtered.filter(item => 
-        dayjs(item.date_received).isAfter(dayjs(filters.dateReceivedFrom), 'day') ||
-        dayjs(item.date_received).isSame(dayjs(filters.dateReceivedFrom), 'day')
-      )
-    }
-
-    if (filters.dateReceivedTo) {
-      filtered = filtered.filter(item => 
-        dayjs(item.date_received).isBefore(dayjs(filters.dateReceivedTo), 'day') ||
-        dayjs(item.date_received).isSame(dayjs(filters.dateReceivedTo), 'day')
-      )
-    }
-
-    if (filters.datePromisedFrom && filters.datePromisedTo) {
-      filtered = filtered.filter(item => {
-        if (!item.date_promised) return false
-        const promisedDate = dayjs(item.date_promised)
-        return (
-          (promisedDate.isAfter(dayjs(filters.datePromisedFrom), 'day') ||
-           promisedDate.isSame(dayjs(filters.datePromisedFrom), 'day')) &&
-          (promisedDate.isBefore(dayjs(filters.datePromisedTo), 'day') ||
-           promisedDate.isSame(dayjs(filters.datePromisedTo), 'day'))
-        )
-      })
-    }
-
-    // Price filters
-    if (filters.priceMin !== null) {
-      filtered = filtered.filter(item => item.price >= filters.priceMin!)
-    }
-
-    if (filters.priceMax !== null) {
-      filtered = filtered.filter(item => item.price <= filters.priceMax!)
-    }
-
-    state.value.filteredItems = filtered
-  }
-
-  function setSearchFilters(filters: Partial<SearchFilters>) {
-    state.value.searchFilters = { ...state.value.searchFilters, ...filters }
-    applyFilters()
-  }
-
-  function clearFilters() {
-    state.value.searchFilters = {
-      query: '',
-      status: [],
-      itemType: [],
-      dateReceivedFrom: null,
-      dateReceivedTo: null,
-      datePromisedFrom: null,
-      datePromisedTo: null,
-      priceMin: null,
-      priceMax: null
-    }
-    applyFilters()
   }
 
   function getItemsByOwner(owner: string): ClothingItem[] {
@@ -705,7 +579,6 @@ export const useItemsStore = defineStore('items', () => {
       
       // Clear local state
       state.value.items = []
-      state.value.filteredItems = []
       state.value.currentItem = null
       state.value.lastFetch = null
 
@@ -722,7 +595,6 @@ export const useItemsStore = defineStore('items', () => {
   return {
     // State
     items,
-    filteredItems,
     currentItem,
     loading,
     error,
@@ -730,7 +602,6 @@ export const useItemsStore = defineStore('items', () => {
     stats,
     itemsByStatus,
     pagination,
-    searchFilters,
 
     // Actions
     fetchAllItems,
@@ -743,9 +614,6 @@ export const useItemsStore = defineStore('items', () => {
     goToPage,
     nextPage,
     previousPage,
-    setSearchFilters,
-    clearFilters,
-    applyFilters,
     getItemsByOwner,
     getItemsWithDeadlines,
     exportItems,
@@ -794,7 +662,7 @@ export const getWithDeadlines = (owner?: string) => {
   let items = store.getItemsWithDeadlines()
   
   if (owner) {
-    items = items.filter(item => 
+    items = items.filter((item: ClothingItemWithDeadline) => 
       item.owner.toLowerCase().includes(owner.toLowerCase())
     )
   }

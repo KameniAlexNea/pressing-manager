@@ -28,14 +28,18 @@
 
 <script setup lang="ts">
 import { useFormatting } from '../../composables/useFormatting'
+import type { ClothingItemWithDeadline } from '@/store/items'
 
-type Row = { id: string; owner: string; date_promised?: string | null; days_left?: number | null }
+defineProps<{
+  rows: ClothingItemWithDeadline[]
+  loading: boolean
+}>()
 
-defineProps<{ rows: Row[]; loading: boolean }>()
+defineEmits(['view'])
 
 const { formatDate } = useFormatting()
 
-function rowClass(record: Row) {
+function rowClass(record: ClothingItemWithDeadline) {
   const d = record.days_left
   if (d == null) return ''
   if (d < 0) return 'deadline-late'
