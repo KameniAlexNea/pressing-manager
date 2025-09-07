@@ -66,7 +66,6 @@ function timestampToString(timestamp: any): string {
 
 export async function getAll(): Promise<ClothingItem[]> {
   const userId = getCurrentUserId()
-  console.log('Getting all items for userId:', userId)
 
   const q = query(
     collection(db, COLLECTION_NAME),
@@ -90,7 +89,6 @@ export async function getAll(): Promise<ClothingItem[]> {
 export async function createItem(data: Partial<ClothingItem>): Promise<ClothingItem> {
   try {
     const userId = getCurrentUserId()
-    console.log('Creating item with userId:', userId)
     console.log('Item data:', data)
     
     // Clean up undefined values recursively - Firebase doesn't allow undefined

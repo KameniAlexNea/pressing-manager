@@ -64,7 +64,7 @@
             </a-row>
 
             <a-form-item label="Notes">
-                <a-textarea v-model:value="form.notes" rows="3" aria-label="Notes générales" />
+                <a-textarea v-model:value="form.notes" rows=3 aria-label="Notes générales" />
             </a-form-item>
 
             <a-form-item label="Photo (optionnelle)">
