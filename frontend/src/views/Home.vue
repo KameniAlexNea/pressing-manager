@@ -6,7 +6,10 @@
     <a-row :gutter="[16, 16]">
       <a-col :xs="12" :sm="12" :md="6" v-for="card in cards" :key="card.title">
         <a-card :title="card.title" :bordered="false" class="stat-card">
-          <div class="stat-value">{{ card.value }}</div>
+          <div class="stat-icon" :style="{ color: card.color }">
+            <component :is="card.icon" />
+          </div>
+          <div class="stat-value" :style="{ color: card.color }">{{ card.value }}</div>
           <div class="stat-subtitle">{{ card.subtitle }}</div>
         </a-card>
       </a-col>
@@ -51,7 +54,11 @@ import {
   PlusCircleOutlined,
   SearchOutlined,
   ClockCircleOutlined,
-  CalendarOutlined
+  CalendarOutlined,
+  AppstoreOutlined,
+  CheckCircleOutlined,
+  GiftOutlined,
+  ExclamationCircleOutlined
 } from '@ant-design/icons-vue'
 
 const router = useRouter()
@@ -62,10 +69,34 @@ let chartInstance: Chart | null = null
 const cards = computed(() => {
   const stats = itemsStore.stats
   return [
-    { title: 'Total', value: stats.total_items, subtitle: 'Articles' },
-    { title: 'Nettoyés', value: stats.cleaned_items, subtitle: 'Articles' },
-    { title: 'Livrés', value: stats.delivered_items, subtitle: 'Articles' },
-    { title: 'En attente', value: stats.pending_items, subtitle: 'Articles' },
+    { 
+      title: 'Total', 
+      value: stats.total_items, 
+      subtitle: 'Articles',
+      icon: AppstoreOutlined,
+      color: '#1677ff'
+    },
+    { 
+      title: 'Nettoyés', 
+      value: stats.cleaned_items, 
+      subtitle: 'Articles',
+      icon: CheckCircleOutlined,
+      color: '#52c41a'
+    },
+    { 
+      title: 'Livrés', 
+      value: stats.delivered_items, 
+      subtitle: 'Articles',
+      icon: GiftOutlined,
+      color: '#13c2c2'
+    },
+    { 
+      title: 'En attente', 
+      value: stats.pending_items, 
+      subtitle: 'Articles',
+      icon: ExclamationCircleOutlined,
+      color: '#faad14'
+    },
   ]
 })
 
@@ -220,11 +251,23 @@ onMounted(() => {
   border-color: #f0f0f0;
 }
 
+.stat-icon {
+  font-size: 32px;
+  margin: 8px 0;
+  opacity: 0.8;
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover .stat-icon {
+  transform: scale(1.1);
+  opacity: 1;
+}
+
 .stat-value {
   font-size: 32px;
   font-weight: 700;
-  color: #1677ff;
   margin: 12px 0;
+  transition: all 0.3s ease;
 }
 
 .stat-subtitle {
@@ -240,6 +283,10 @@ onMounted(() => {
 }
 
 @media (max-width: 768px) {
+  .stat-icon {
+    font-size: 28px;
+  }
+
   .stat-value {
     font-size: 26px;
   }
@@ -250,6 +297,10 @@ onMounted(() => {
 }
 
 @media (max-width: 576px) {
+  .stat-icon {
+    font-size: 24px;
+  }
+
   .stat-value {
     font-size: 22px;
   }
