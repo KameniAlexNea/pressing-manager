@@ -1,41 +1,67 @@
 <template>
-  <a-card title="Liste des Articles" :bordered="false">
-    <a-tabs v-model:activeKey="statusTab" centered @change="onTabChange">
-      <a-tab-pane key="received" tab="Reçus" />
-      <a-tab-pane key="cleaned" tab="Nettoyés" />
-      <a-tab-pane key="delivered" tab="Livrés" />
-    </a-tabs>
+  <div class="pending-container">
+    <a-card title="Articles" :bordered="false" class="mobile-card">
+      <!-- Mobile-Optimized Status Tabs -->
+      <div class="status-tabs-mobile">
+        <a-radio-group
+          v-model:value="statusTab"
+          button-style="solid"
+          size="large"
+          class="status-radio-group"
+        >
+          <a-radio-button value="received" class="status-tab">
+            <div class="tab-content">
+              <span class="tab-label">Reçus</span>
+              <a-badge :count="statusCounts.received" :number-style="{ backgroundColor: '#1890ff' }" />
+            </div>
+          </a-radio-button>
+          <a-radio-button value="cleaned" class="status-tab">
+            <div class="tab-content">
+              <span class="tab-label">Nettoyés</span>
+              <a-badge :count="statusCounts.cleaned" :number-style="{ backgroundColor: '#52c41a' }" />
+            </div>
+          </a-radio-button>
+          <a-radio-button value="delivered" class="status-tab">
+            <div class="tab-content">
+              <span class="tab-label">Livrés</span>
+              <a-badge :count="statusCounts.delivered" :number-style="{ backgroundColor: '#722ed1' }" />
+            </div>
+          </a-radio-button>
+        </a-radio-group>
+      </div>
 
-    <ItemList
-      :items="displayedItems"
-      :loading="itemsStore.loading"
-      :show-status-actions="true"
-      :show-deadlines="true"
-      :empty-description="emptyDescription"
-      :page-size="itemsStore.pagination.pageSize"
-      :show-size-changer="false"
-      :show-quick-jumper="false"
-      :server-side-pagination="true"
-      @view="viewItem"
-      @status-change="handleStatusChange"
-      @image-preview="handleImagePreview"
-    />
+      <!-- Items List -->
+      <div class="items-section">
+        <ItemList
+          :items="displayedItems"
+          :loading="itemsStore.loading"
+          :show-status-actions="true"
+          :show-deadlines="statusTab === 'received'"
+          :empty-description="emptyDescription"
+          :page-size="pageSize"
+          :show-size-changer="false"
+          :show-quick-jumper="false"
+          :server-side-pagination="false"
+          @view="viewItem"
+          @status-change="handleStatusChange"
+          @image-preview="handleImagePreview"
+        />
+      </div>
 
-    <!-- Client-side Pagination for Status Filtering -->
-    <div v-if="statusPagination.total > pageSize" class="pagination-container">
-      <a-pagination
-        v-model:current="currentPage"
-        v-model:page-size="pageSize"
-        :total="statusPagination.total"
-        :show-size-changer="true"
-        :show-quick-jumper="true"
-        :show-total="(total: number, range: [number, number]) => `${range[0]}-${range[1]} sur ${total} articles`"
-        :page-size-options="['10', '20', '50', '100']"
-        @change="onPageChange"
-        @show-size-change="onPageSizeChange"
-      />
-    </div>
-  </a-card>
+      <!-- Mobile-Optimized Pagination -->
+      <div v-if="statusPagination.total > pageSize" class="pagination-mobile">
+        <a-pagination
+          v-model:current="currentPage"
+          :total="statusPagination.total"
+          :page-size="pageSize"
+          :show-size-changer="false"
+          :show-quick-jumper="false"
+          size="small"
+          @change="onPageChange"
+        />
+      </div>
+    </a-card>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -51,16 +77,23 @@ const statusTab = ref<'received' | 'cleaned' | 'delivered'>('received')
 const currentPage = ref(1)
 const pageSize = ref(20)
 
+// Compute status counts for badges and stats
+const statusCounts = computed(() => ({
+  received: itemsStore.items.filter(item => item.status === 'received').length,
+  cleaned: itemsStore.items.filter(item => item.status === 'cleaned').length,
+  delivered: itemsStore.items.filter(item => item.status === 'delivered').length
+}))
+
 // Display items are filtered from all items in store (client-side filtering for status)
 const displayedItems = computed(() => {
   const statusItems = itemsStore.items.filter(item => item.status === statusTab.value)
-  
+
   // Apply client-side pagination
-  const pageSize = itemsStore.pagination.pageSize
   const currentPageValue = currentPage.value
-  const startIndex = (currentPageValue - 1) * pageSize
-  const endIndex = startIndex + pageSize
-  
+  const pageSizeValue = pageSize.value
+  const startIndex = (currentPageValue - 1) * pageSizeValue
+  const endIndex = startIndex + pageSizeValue
+
   return statusItems.slice(startIndex, endIndex)
 })
 
@@ -107,22 +140,9 @@ function handleImagePreview(imageUrl: string) {
   console.log('Image preview:', imageUrl)
 }
 
-// Handle tab changes
-async function onTabChange(activeKey: string) {
-  statusTab.value = activeKey as 'received' | 'cleaned' | 'delivered'
-  currentPage.value = 1 // Reset to first page when switching tabs
-  // No need to fetch again since all items are already loaded
-}
-
 // Handle pagination changes (client-side only)
 function onPageChange(page: number) {
   currentPage.value = page
-  // No network request needed - pagination is handled by computed properties
-}
-
-function onPageSizeChange(_current: number, size: number) {
-  pageSize.value = size
-  currentPage.value = 1 // Reset to first page when changing page size
   // No network request needed - pagination is handled by computed properties
 }
 
@@ -145,18 +165,27 @@ watch(() => statusTab.value, () => {
 </script>
 
 <style scoped>
-.pagination-container {
-  margin-top: 24px;
+.pending-container {
+  padding: 16px;
+}
+
+.status-tabs-mobile {
+  margin-bottom: 16px;
+}
+
+.items-section {
+  margin-top: 16px;
+}
+
+.pagination-mobile {
+  margin-top: 20px;
   text-align: center;
 }
 
+/* Mobile adjustments */
 @media (max-width: 768px) {
-  .pagination-container {
-    margin-top: 16px;
-  }
-  
-  :deep(.ant-pagination .ant-pagination-options) {
-    display: none;
+  .pending-container {
+    padding: 8px;
   }
 }
 </style>

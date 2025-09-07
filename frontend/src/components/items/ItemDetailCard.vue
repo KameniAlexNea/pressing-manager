@@ -388,8 +388,100 @@ async function saveItemsChanges() {
 }
 
 .status-actions {
-    margin-top: 16px;
-    width: 100%;
-    justify-content: center;
+  margin-top: 16px;
+  width: 100%;
+  justify-content: center;
+}
+
+/* Mobile optimizations for list mode */
+@media (max-width: 768px) {
+  .item-card {
+    padding: 12px 8px;
+    margin-bottom: 8px;
+  }
+
+  .item-title {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .item-link {
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .status-tag {
+    font-size: 11px;
+    align-self: flex-start;
+  }
+
+  .item-description {
+    font-size: 13px;
+  }
+
+  .item-details {
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 8px;
+  }
+
+  .detail-item {
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .item-meta {
+    flex-direction: column;
+    gap: 6px;
+    align-items: flex-start;
+  }
+
+  .price-info,
+  .contact-info {
+    font-size: 12px;
+  }
+
+  .items-list {
+    margin: 6px 0;
+  }
+
+  .item-tag {
+    font-size: 11px;
+    margin-bottom: 2px;
+  }
+
+  .deadline-info {
+    margin-top: 6px;
+  }
+
+  .deadline-tag {
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 480px) {
+  .item-card {
+    padding: 8px 6px;
+  }
+
+  .item-link {
+    font-size: 13px;
+  }
+
+  .item-description {
+    font-size: 12px;
+  }
+
+  .detail-item {
+    font-size: 11px;
+  }
+
+  .price-info,
+  .contact-info {
+    font-size: 11px;
+  }
 }
 </style>
