@@ -14,7 +14,6 @@
             <a-menu-item key="/deadlines"><CalendarOutlined /> Délais</a-menu-item>
             <a-menu-item key="/stats"><BarChartOutlined /> Statistiques</a-menu-item>
             <a-menu-item key="/types"><DatabaseOutlined /> Types</a-menu-item>
-            <a-menu-item key="/owner"><UserOutlined /> Par propriétaire</a-menu-item>
             <a-menu-item key="/pending"><ClockCircleOutlined /> En attente</a-menu-item>
             <a-menu-divider />
             <a-menu-item key="logout"><LogoutOutlined /> Déconnexion</a-menu-item>
@@ -31,7 +30,6 @@ import {
   CalendarOutlined,
   BarChartOutlined,
   DatabaseOutlined,
-  UserOutlined,
   ClockCircleOutlined,
   LogoutOutlined,
 } from '@ant-design/icons-vue'

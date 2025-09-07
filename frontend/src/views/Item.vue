@@ -1,14 +1,63 @@
 <template>
-  <a-card title="Rechercher un article" :bordered="false">
-    <a-form @submit.prevent="lookup">
-      <a-form-item>
-        <a-input-search v-model:value="code" placeholder="Entrez le code de l'article" enter-button="Rechercher"
-          size="large" @search="lookup" :loading="loading" :disabled="loading" aria-label="Recherche code article" />
-      </a-form-item>
+  <a-card title="Rechercher des articles" :bordered="false">
+    <!-- Search Form -->
+    <a-form @submit.prevent="performSearch" layout="vertical">
+      <a-row :gutter="[16, 16]">
+        <a-col :xs="24" :sm="12" :lg="8">
+          <a-form-item label="Code article">
+            <a-input 
+              v-model:value="searchParams.code" 
+              placeholder="Code de l'article" 
+              allow-clear
+              @press-enter="performSearch"
+            />
+          </a-form-item>
+        </a-col>
+        <a-col :xs="24" :sm="12" :lg="8">
+          <a-form-item label="Propriétaire">
+            <a-input 
+              v-model:value="searchParams.owner" 
+              placeholder="Nom du propriétaire" 
+              allow-clear
+              @press-enter="performSearch"
+            />
+          </a-form-item>
+        </a-col>
+        <a-col :xs="24" :sm="12" :lg="8">
+          <a-form-item label="Statut">
+            <a-select 
+              v-model:value="searchParams.status" 
+              placeholder="Tous les statuts"
+              allow-clear
+            >
+              <a-select-option value="received">Reçu</a-select-option>
+              <a-select-option value="cleaned">Nettoyé</a-select-option>
+              <a-select-option value="delivered">Livré</a-select-option>
+            </a-select>
+          </a-form-item>
+        </a-col>
+      </a-row>
+      
+      <a-row :gutter="[16, 16]">
+        <a-col :xs="24" :sm="24" :lg="24">
+          <a-form-item>
+            <a-space>
+              <a-button @click="clearSearch" :disabled="loading">
+                Effacer
+              </a-button>
+              <a-button type="primary" @click="performSearch" :loading="loading">
+                Rechercher
+              </a-button>
+            </a-space>
+          </a-form-item>
+        </a-col>
+      </a-row>
     </a-form>
 
+    <!-- Results -->
     <a-skeleton :loading="loading" active>
-      <div v-if="item">
+      <div v-if="singleItem && item">
+        <!-- Single Item Details (when searching by exact code) -->
         <a-card :title="'Détails de l\'article ' + item.id" class="item-details-card">
           <template #extra>
             <a-tag :color="statusColor(item.status)">{{ item.status }}</a-tag>
@@ -96,7 +145,22 @@
           </a-space>
         </a-card>
       </div>
-      <a-empty v-else-if="searched" description="Aucun article trouvé pour ce code." />
+
+      <!-- Multiple Results -->
+      <div v-else-if="searchResults.length > 0">
+        <a-card :title="`${searchResults.length} article(s) trouvé(s)`" :bordered="false">
+          <ItemList 
+            :items="searchResults" 
+            :loading="loading" 
+            :show-status-actions="true"
+            :show-deadlines="true"
+            @view="viewItem"
+            @status-change="handleStatusChange"
+          />
+        </a-card>
+      </div>
+
+      <a-empty v-else-if="searched" description="Aucun article trouvé." />
     </a-skeleton>
   </a-card>
 </template>
@@ -104,18 +168,29 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
-import { getById, updateStatus, updateItemsList, type ClothingItem, type ItemLine } from '../store/items'
+import { useRoute, useRouter } from 'vue-router'
+import { getById, getAll, updateStatus, updateItemsList, type ClothingItem, type ItemLine } from '../store/items'
 import { getTypes } from '../store/types'
 import { useFormatting } from '../composables/useFormatting'
 import { message } from 'ant-design-vue'
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons-vue'
+import ItemList from '../components/items/ItemList.vue'
 
-const code = ref('')
+// Search parameters
+const searchParams = ref({
+  code: '',
+  owner: '',
+  status: undefined as string | undefined
+})
+
+// State
 const item = ref<ClothingItem | undefined>()
+const searchResults = ref<ClothingItem[]>([])
 const loading = ref(false)
 const searched = ref(false)
+const singleItem = ref(false)
 const route = useRoute()
+const router = useRouter()
 const { formatDate, statusColor } = useFormatting()
 
 // Editing state
@@ -125,25 +200,105 @@ const types = getTypes()
 
 onMounted(() => {
   if (route.query.id && typeof route.query.id === 'string') {
-    code.value = route.query.id
-    lookup()
+    searchParams.value.code = route.query.id
+    performSearch()
   }
 })
 
-async function lookup() {
-  if (!code.value) return;
+async function performSearch() {
+  if (!hasSearchCriteria()) {
+    message.warning('Veuillez entrer au moins un critère de recherche.')
+    return
+  }
+
   loading.value = true
   searched.value = true
+  singleItem.value = false
+  searchResults.value = []
+  item.value = undefined
+
   try {
-    item.value = await getById(code.value)
-    if (!item.value) {
-      message.warning("Aucun article trouvé pour ce code.")
+    // If searching by exact code, try to get single item first
+    if (searchParams.value.code && !searchParams.value.owner && !searchParams.value.status) {
+      const singleResult = await getById(searchParams.value.code)
+      if (singleResult) {
+        item.value = singleResult
+        singleItem.value = true
+        return
+      }
     }
+
+    // Otherwise, perform multi-criteria search
+    const allItems = await getAll()
+    let filtered = allItems
+
+    // Filter by code (partial match)
+    if (searchParams.value.code) {
+      filtered = filtered.filter(item => 
+        item.id.toLowerCase().includes(searchParams.value.code.toLowerCase())
+      )
+    }
+
+    // Filter by owner (partial match)
+    if (searchParams.value.owner) {
+      filtered = filtered.filter(item => 
+        item.owner.toLowerCase().includes(searchParams.value.owner.toLowerCase())
+      )
+    }
+
+    // Filter by status
+    if (searchParams.value.status) {
+      filtered = filtered.filter(item => item.status === searchParams.value.status)
+    }
+
+    searchResults.value = filtered
+
+    if (filtered.length === 0) {
+      message.info('Aucun article trouvé pour ces critères.')
+    } else if (filtered.length === 1) {
+      // If only one result, show it as single item
+      item.value = filtered[0]
+      singleItem.value = true
+      searchResults.value = []
+    }
+
   } catch (e) {
-    message.error("Erreur lors de la recherche de l'article.")
+    console.error('Search error:', e)
+    message.error('Erreur lors de la recherche.')
   } finally {
     loading.value = false
   }
+}
+
+function hasSearchCriteria(): boolean {
+  return !!(
+    searchParams.value.code ||
+    searchParams.value.owner ||
+    searchParams.value.status
+  )
+}
+
+function clearSearch() {
+  searchParams.value = {
+    code: '',
+    owner: '',
+    status: undefined
+  }
+  item.value = undefined
+  searchResults.value = []
+  searched.value = false
+  singleItem.value = false
+}
+
+function viewItem(id: string) {
+  router.push({ path: '/item', query: { id } })
+}
+
+function handleStatusChange(_id: string, _status: 'cleaned' | 'delivered') {
+  // Refresh search results after status change
+  setTimeout(() => {
+    performSearch()
+  }, 500)
 }
 
 async function updateAndRefresh(id: string, status: 'cleaned' | 'delivered') {
