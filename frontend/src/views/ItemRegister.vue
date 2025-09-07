@@ -95,9 +95,12 @@
 import { reactive, ref } from 'vue'
 import dayjs, { Dayjs } from 'dayjs'
 import { createItem, type ItemLine } from '../store/items'
+import { useAuthStore } from '../store/auth'
 import { getTypes } from '../store/types'
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons-vue'
 import type { UploadFile, UploadChangeParam } from 'ant-design-vue';
+
+const authStore = useAuthStore()
 
 // Image Upload state
 const previewVisible = ref(false);
@@ -158,7 +161,7 @@ type FormT = {
 
 const defaultPromisedDays = 7
 const createDefaultFormState = (): FormT => ({
-    items: [{ type: types[0]?.name || '', qty: 1 }],
+    items: [{ type: types.value[0]?.name || '', qty: 1 }],
     owner: '',
     contact: '',
     price: 0,
@@ -171,7 +174,7 @@ const createDefaultFormState = (): FormT => ({
 const form = reactive<FormT>(createDefaultFormState())
 
 function addItem() {
-    form.items.push({ type: types[0]?.name || '', qty: 1 })
+    form.items.push({ type: types.value[0]?.name || '', qty: 1 })
 }
 function removeItem(idx: number) {
     if (form.items.length > 1) form.items.splice(idx, 1)
@@ -195,28 +198,46 @@ import { message } from 'ant-design-vue'
 
 async function onSubmit() {
     if (loading.value) return;
+    
+    // Check authentication
+    if (!authStore.isAuthenticated || !authStore.user) {
+        message.error('Vous devez être connecté pour enregistrer un article.')
+        return;
+    }
+    
     if (!form.owner || form.price <= 0) {
         message.warning('Veuillez remplir tous les champs obligatoires.')
         return;
     }
+    
     loading.value = true;
     try {
-        const res = await createItem({
+        console.log('Submitting form data:', form)
+        
+        // Prepare data and remove undefined values
+        const itemData: any = {
             items: form.items.map(i => ({ type: i.type, qty: i.qty, notes: i.notes })),
             owner: form.owner,
-            contact: form.contact,
             price: form.price,
-            date_received: form.date_received?.toISOString(),
-            date_promised: form.date_promised?.toISOString(),
-            notes: form.notes,
-            image: imageDataUrl.value || undefined,
-            amountGiven: form.amountGiven,
-        })
+        }
+        
+        // Only add optional fields if they have values
+        if (form.contact) itemData.contact = form.contact
+        if (form.date_received) itemData.date_received = form.date_received.toISOString()
+        if (form.date_promised) itemData.date_promised = form.date_promised.toISOString()
+        if (form.notes) itemData.notes = form.notes
+        if (imageDataUrl.value) itemData.image = imageDataUrl.value
+        if (form.amountGiven !== undefined && form.amountGiven !== null) itemData.amountGiven = form.amountGiven
+        
+        console.log('Cleaned item data:', itemData)
+        
+        const res = await createItem(itemData)
         savedId.value = res.id
         showSuccessModal.value = true
         message.success('Article enregistré avec succès.')
     } catch (e) {
-        message.error("Erreur lors de l'enregistrement de l'article.")
+        console.error('Registration error:', e)
+        message.error(`Erreur lors de l'enregistrement de l'article: ${e instanceof Error ? e.message : 'Erreur inconnue'}`)
     } finally {
         loading.value = false;
     }

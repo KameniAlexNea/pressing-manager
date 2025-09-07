@@ -88,29 +88,45 @@ export async function getAll(): Promise<ClothingItem[]> {
 }
 
 export async function createItem(data: Partial<ClothingItem>): Promise<ClothingItem> {
-  const userId = getCurrentUserId()
-  const itemData = {
-    ...data,
-    userId,
-    status: 'received' as const,
-    date_received: data.date_received ? new Date(data.date_received) : new Date(),
-    date_promised: data.date_promised ? new Date(data.date_promised) : null,
-    date_cleaned: null,
-    date_delivered: null,
+  try {
+    const userId = getCurrentUserId()
+    console.log('Creating item with userId:', userId)
+    console.log('Item data:', data)
+    
+    // Clean up undefined values - Firebase doesn't allow undefined
+    const cleanData = Object.fromEntries(
+      Object.entries(data).filter(([_, value]) => value !== undefined)
+    )
+    
+    const itemData = {
+      ...cleanData,
+      userId,
+      status: 'received' as const,
+      date_received: data.date_received ? new Date(data.date_received) : new Date(),
+      date_promised: data.date_promised ? new Date(data.date_promised) : null,
+      date_cleaned: null,
+      date_delivered: null,
+    }
+    
+    console.log('Processed item data:', itemData)
+
+    const docRef = await addDoc(collection(db, COLLECTION_NAME), itemData)
+    console.log('Document created with ID:', docRef.id)
+
+    return {
+      id: docRef.id,
+      ...cleanData,
+      userId,
+      status: 'received',
+      date_received: itemData.date_received.toISOString(),
+      date_promised: itemData.date_promised?.toISOString() || null,
+      date_cleaned: null,
+      date_delivered: null,
+    } as ClothingItem
+  } catch (error) {
+    console.error('Error creating item:', error)
+    throw error
   }
-
-  const docRef = await addDoc(collection(db, COLLECTION_NAME), itemData)
-
-  return {
-    id: docRef.id,
-    ...data,
-    userId,
-    status: 'received',
-    date_received: itemData.date_received.toISOString(),
-    date_promised: itemData.date_promised?.toISOString() || null,
-    date_cleaned: null,
-    date_delivered: null,
-  } as ClothingItem
 }
 
 export async function getById(id: string): Promise<ClothingItem | undefined> {
