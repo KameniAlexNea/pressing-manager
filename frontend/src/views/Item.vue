@@ -61,6 +61,7 @@
           :item="item"
           :loading="loading"
           :show-actions="true"
+          :list-mode="false"
           @status-change="handleStatusChange"
           @save-items="handleSaveItems"
         />
