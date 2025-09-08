@@ -13,7 +13,6 @@ dependencies = [
     "python-dotenv>=1.0.0",
     "python-multipart>=0.0.20",
     "pyyaml>=6.0.2",
-    "sqlalchemy>=2.0.43",
     "tox>=4.30.2",
     "uvicorn[standard]>=0.35.0",
 ]

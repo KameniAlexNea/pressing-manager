@@ -10,16 +10,7 @@ import uuid
 from datetime import datetime, timedelta
 from typing import List, Dict, Any
 
-# Add the app directory to the path
-sys.path.append('.')
-
-try:
-    import firebase_admin
-    from firebase_admin import firestore
-    FIREBASE_AVAILABLE = True
-except Exception as e:
-    print(f"⚠️  Firebase not available: {e}")
-    FIREBASE_AVAILABLE = False
+from app.crud import create_item
 
 
 # Sample data for generating realistic test data
@@ -132,35 +123,21 @@ def generate_random_item(user_id: str) -> Dict[str, Any]:
 
 
 def save_to_firebase(items: List[Dict[str, Any]], user_id: str):
-    """Save items to Firebase Firestore."""
-    if not FIREBASE_AVAILABLE:
-        print("📝 Firebase not available - showing data that would be saved:")
-        return False
-
+    """Save items to Firebase Firestore using CRUD functions."""
     try:
-        # Try to get Firestore client with explicit app reference
-        try:
-            db = firestore.client(app=firebase_admin.get_app())
-        except Exception as client_error:
-            print(f"❌ Firestore client error: {client_error}")
+        saved_count = 0
+        for item_data in items:
+            result = create_item(item_data)
+            if result:
+                saved_count += 1
+            else:
+                print(f"❌ Failed to save item {item_data['id']}")
+
+        if saved_count == len(items):
+            return True
+        else:
+            print(f"⚠️  Only saved {saved_count}/{len(items)} items")
             return False
-
-        batch = db.batch()
-
-        for i, item_data in enumerate(items):
-            doc_ref = db.collection('clothing_items').document(item_data['id'])
-            batch.set(doc_ref, item_data)
-
-            # Commit batch every 10 items
-            if (i + 1) % 10 == 0:
-                batch.commit()
-                batch = db.batch()
-
-        # Commit remaining items
-        if len(items) % 10 != 0:
-            batch.commit()
-
-        return True
     except Exception as e:
         print(f"❌ Error saving to Firebase: {e}")
         return False
@@ -177,10 +154,7 @@ def main():
     num_records = int(sys.argv[2]) if len(sys.argv) > 2 else 10
 
     print(f"Generating {num_records} test records for user: {user_id}")
-    if FIREBASE_AVAILABLE:
-        print("📍 Target: Firebase Firestore collection 'clothing_items'")
-    else:
-        print("📝 Mode: Preview (Firebase not configured)")
+    print("📍 Target: Firebase Firestore collection 'clothing_items' (via CRUD)")
     print("=" * 60)
 
     try:

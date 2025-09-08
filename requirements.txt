@@ -4,5 +4,5 @@ pydantic
 pyyaml
 jinja2
 python-multipart
-firebase-admin>=7.1.0
+firebase-admin
 python-dotenv

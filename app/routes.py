@@ -77,7 +77,9 @@ def list_items(
     if status:
         items = [i for i in items if i.get("status") == status]
     # Sort by date_received desc
-    items = sorted(items, key=lambda i: i.get("date_received") or datetime.min, reverse=True)
+    items = sorted(
+        items, key=lambda i: i.get("date_received") or datetime.min, reverse=True
+    )
     return items
 
 
