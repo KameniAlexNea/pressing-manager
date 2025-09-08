@@ -1,126 +1,202 @@
 from datetime import datetime, timedelta
+import os
+from typing import List, Dict, Any, Optional
 
-from sqlalchemy.orm import Session
+import firebase_admin
+from firebase_admin import firestore
 
-from . import models
+# Initialize Firebase if not already done
+try:
+    firebase_admin.get_app()
+except ValueError:
+    # Firebase not initialized, try to initialize it
+    json_path = os.path.join(os.path.dirname(__file__), "..", "pressing-manager-35903.json")
+    if os.path.exists(json_path):
+        from firebase_admin import credentials
+        cred = credentials.Certificate(json_path)
+        firebase_admin.initialize_app(cred)
 
-
-def get_item(db: Session, item_id: str):
-    return (
-        db.query(models.ClothingItem).filter(models.ClothingItem.id == item_id).first()
-    )
-
-
-def get_items_by_owner(db: Session, owner: str):
-    return (
-        db.query(models.ClothingItem)
-        .filter(models.ClothingItem.owner == owner.upper())
-        .all()
-    )
-
-
-def get_pending_items(db: Session, days: int):
-    cutoff_date = datetime.now() - timedelta(days=days)
-    return (
-        db.query(models.ClothingItem)
-        .filter(
-            models.ClothingItem.status != "cleaned",
-            models.ClothingItem.date_received < cutoff_date,
-        )
-        .all()
-    )
+# Get Firestore client
+db = firestore.client()
 
 
-def create_item(db: Session, item: dict):
-    db_item = models.ClothingItem(**item)
-    db.add(db_item)
-    db.commit()
-    db.refresh(db_item)
-    return db_item
+def get_item(item_id: str) -> Optional[Dict[str, Any]]:
+    """Get a single item by ID from Firestore"""
+    try:
+        doc_ref = db.collection('clothing_items').document(item_id)
+        doc = doc_ref.get()
+        if doc.exists:
+            return doc.to_dict()
+        return None
+    except Exception as e:
+        print(f"Error getting item {item_id}: {e}")
+        return None
 
 
-def get_items_with_deadlines(db: Session, owner: str = None):
-    query = db.query(models.ClothingItem).filter(
-        models.ClothingItem.date_promised.isnot(None)
-    )
-    if owner:
-        query = query.filter(models.ClothingItem.owner == owner.upper())
-    return query.order_by(models.ClothingItem.date_promised).all()
+def get_items_by_owner(owner: str) -> List[Dict[str, Any]]:
+    """Get all items by owner from Firestore"""
+    try:
+        docs = db.collection('clothing_items').where('owner', '==', owner.upper()).stream()
+        return [doc.to_dict() for doc in docs]
+    except Exception as e:
+        print(f"Error getting items for owner {owner}: {e}")
+        return []
 
 
-def update_item_status(db: Session, item_id: str, status: str, date_field: str = None):
-    item = (
-        db.query(models.ClothingItem).filter(models.ClothingItem.id == item_id).first()
-    )
-    if item:
-        item.status = status
+def get_pending_items(days: int) -> List[Dict[str, Any]]:
+    """Get pending items older than specified days from Firestore"""
+    try:
+        cutoff_date = datetime.now() - timedelta(days=days)
+        docs = (db.collection('clothing_items')
+                .where('status', '!=', 'cleaned')
+                .where('date_received', '<', cutoff_date)
+                .stream())
+        return [doc.to_dict() for doc in docs]
+    except Exception as e:
+        print(f"Error getting pending items: {e}")
+        return []
+
+
+def create_item(item: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """Create a new item in Firestore"""
+    try:
+        doc_ref = db.collection('clothing_items').document(item['id'])
+        doc_ref.set(item)
+        return item
+    except Exception as e:
+        print(f"Error creating item: {e}")
+        return None
+
+
+def get_items_with_deadlines(owner: str = None) -> List[Dict[str, Any]]:
+    """Get items with deadlines from Firestore"""
+    try:
+        query = db.collection('clothing_items').where('date_promised', '!=', None)
+
+        if owner:
+            query = query.where('owner', '==', owner.upper())
+
+        docs = query.order_by('date_promised').stream()
+        return [doc.to_dict() for doc in docs]
+    except Exception as e:
+        print(f"Error getting items with deadlines: {e}")
+        return []
+
+
+def update_item_status(item_id: str, status: str, date_field: str = None) -> Optional[Dict[str, Any]]:
+    """Update item status in Firestore"""
+    try:
+        doc_ref = db.collection('clothing_items').document(item_id)
+        update_data = {'status': status}
+
         if date_field:
-            setattr(item, date_field, datetime.now())
-        db.commit()
-        db.refresh(item)
+            update_data[date_field] = datetime.now()
+
+        doc_ref.update(update_data)
+
+        # Get updated document
+        updated_doc = doc_ref.get()
+        if updated_doc.exists:
+            return updated_doc.to_dict()
+        return None
+    except Exception as e:
+        print(f"Error updating item {item_id}: {e}")
+        return None
+
+
+def get_stats() -> Dict[str, Any]:
+    """Get statistics from Firestore"""
+    try:
+        # Get all documents
+        docs = db.collection('clothing_items').stream()
+        items = [doc.to_dict() for doc in docs]
+
+        total_items = len(items)
+        cleaned_items = len([item for item in items if item.get('status') == 'cleaned'])
+        delivered_items = len([item for item in items if item.get('status') == 'delivered'])
+        pending_items = len([item for item in items if item.get('status') == 'received'])
+
+        total_revenue = sum(item.get('price', 0) for item in items if item.get('status') == 'delivered')
+
+        return {
+            "total_items": total_items,
+            "cleaned_items": cleaned_items,
+            "delivered_items": delivered_items,
+            "pending_items": pending_items,
+            "total_revenue": total_revenue,
+        }
+    except Exception as e:
+        print(f"Error getting stats: {e}")
+        return {
+            "total_items": 0,
+            "cleaned_items": 0,
+            "delivered_items": 0,
+            "pending_items": 0,
+            "total_revenue": 0,
+        }
+
+
+def item_to_dict(item: Dict[str, Any]) -> Dict[str, Any]:
+    """Convert Firestore item to dict format (already in dict format)"""
+    if not item:
+        return {}
     return item
 
 
-def get_stats(db: Session):
-    total_items = db.query(models.ClothingItem).count()
-    cleaned_items = (
-        db.query(models.ClothingItem)
-        .filter(models.ClothingItem.status == "cleaned")
-        .count()
-    )
-    delivered_items = (
-        db.query(models.ClothingItem)
-        .filter(models.ClothingItem.status == "delivered")
-        .count()
-    )
-    pending_items = (
-        db.query(models.ClothingItem)
-        .filter(models.ClothingItem.status == "received")
-        .count()
-    )
-    total_revenue = (
-        db.query(models.ClothingItem)
-        .filter(models.ClothingItem.status == "delivered")
-        .with_entities(models.ClothingItem.price)
-        .all()
-    )
-    total_revenue = sum(price[0] for price in total_revenue if price[0])
-    return {
-        "total_items": total_items,
-        "cleaned_items": cleaned_items,
-        "delivered_items": delivered_items,
-        "pending_items": pending_items,
-        "total_revenue": total_revenue,
-    }
+def clear_items() -> bool:
+    """Clear all items from Firestore (WARNING: This deletes all data!)"""
+    try:
+        # Get all documents
+        docs = db.collection('clothing_items').stream()
+
+        # Delete in batches
+        batch = db.batch()
+        count = 0
+
+        for doc in docs:
+            batch.delete(doc.reference)
+            count += 1
+
+            # Commit every 10 deletions
+            if count % 10 == 0:
+                batch.commit()
+                batch = db.batch()
+
+        # Commit remaining deletions
+        if count % 10 != 0:
+            batch.commit()
+
+        print(f"Deleted {count} items from Firestore")
+        return True
+    except Exception as e:
+        print(f"Error clearing items: {e}")
+        return False
 
 
-def item_to_dict(item):
-    if not item:
+def get_all_items() -> List[Dict[str, Any]]:
+    """Get all items from Firestore"""
+    try:
+        docs = db.collection('clothing_items').stream()
+        return [doc.to_dict() for doc in docs]
+    except Exception as e:
+        print(f"Error getting all items: {e}")
+        return []
+
+
+def update_items_list(item_id: str, items_list: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    """Update the items list for a specific item in Firestore"""
+    try:
+        doc_ref = db.collection('clothing_items').document(item_id)
+        doc_ref.update({
+            'items': items_list,
+            'updated_at': datetime.now()
+        })
+
+        # Get updated document
+        updated_doc = doc_ref.get()
+        if updated_doc.exists:
+            return updated_doc.to_dict()
         return None
-    return {
-        "id": item.id,
-        "items": item.items,
-        "description": item.description,
-        "owner": item.owner,
-        "price": item.price,
-        "status": item.status,
-        "date_received": item.date_received.isoformat() if item.date_received else None,
-        "date_cleaned": item.date_cleaned.isoformat() if item.date_cleaned else None,
-        "date_delivered": (
-            item.date_delivered.isoformat() if item.date_delivered else None
-        ),
-        "notes": item.notes,
-        "contact": item.contact,
-        "date_promised": item.date_promised.isoformat() if item.date_promised else None,
-        "image": getattr(item, "image", None),
-        "amount_given": getattr(item, "amount_given", None),
-    }
-
-
-def clear_items(db: Session):
-    db.query(models.ClothingItem).delete()
-    db.commit()
-
-
-def get_all_items(db: Session):
-    return db.query(models.ClothingItem).all()
+    except Exception as e:
+        print(f"Error updating items list for {item_id}: {e}")
+        return None
