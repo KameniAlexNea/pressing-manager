@@ -4,4 +4,5 @@ pydantic
 pyyaml
 jinja2
 python-multipart
-sqlalchemy
+firebase-admin
+python-dotenv

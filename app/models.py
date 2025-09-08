@@ -1,23 +1,31 @@
-from sqlalchemy import JSON, Column, DateTime, Float, String
-from sqlalchemy.sql import func
+from dataclasses import dataclass
+from datetime import datetime
+from typing import List, Optional
 
-from .database import Base
+
+@dataclass
+class ItemLine:
+    id: str
+    type: str  # e.g., "shirt", "pants", "dress", "jacket"
+    description: Optional[str] = None
+    quantity: int = 1
+    price: float = 0.0
+    notes: Optional[str] = None
 
 
-class ClothingItem(Base):
-    __tablename__ = "clothing_items"
-
-    id = Column(String, primary_key=True, index=True)
-    items = Column(JSON, nullable=True)  # List of ItemLine objects
-    description = Column(String, nullable=True, index=True)
-    owner = Column(String, index=True)
-    price = Column(Float)
-    status = Column(String, default="received")
-    date_received = Column(DateTime(timezone=True), server_default=func.now())
-    date_cleaned = Column(DateTime(timezone=True), nullable=True)
-    date_delivered = Column(DateTime(timezone=True), nullable=True)
-    notes = Column(String, nullable=True)
-    contact = Column(String, nullable=True)
-    date_promised = Column(DateTime(timezone=True), nullable=True)
-    image = Column(String, nullable=True)  # base64 or data URL
-    amount_given = Column(Float, nullable=True)  # payment at registration
+@dataclass
+class ClothingItem:
+    id: str
+    items: Optional[List[ItemLine]] = None  # List of ItemLine objects
+    description: Optional[str] = None
+    owner: str = ""
+    price: float = 0.0
+    status: str = "received"
+    date_received: Optional[datetime] = None
+    date_cleaned: Optional[datetime] = None
+    date_delivered: Optional[datetime] = None
+    notes: Optional[str] = None
+    contact: Optional[str] = None
+    date_promised: Optional[datetime] = None
+    image: Optional[str] = None  # base64 or data URL
+    amount_given: Optional[float] = None  # payment at registration

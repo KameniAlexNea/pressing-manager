@@ -1,4 +1,16 @@
-import localforage from 'localforage'
+import { useAuthStore } from './auth'
+import { db } from '../firebase'
+import {
+  collection,
+  doc,
+  getDocs,
+  getDoc,
+  addDoc,
+  updateDoc,
+  query,
+  where,
+  orderBy
+} from 'firebase/firestore'
 import dayjs from 'dayjs'
 
 export type ItemLine = {
@@ -6,6 +18,7 @@ export type ItemLine = {
   qty: number
   notes?: string
 }
+
 export type ClothingItem = {
   id: string
   items?: ItemLine[]
@@ -19,117 +32,271 @@ export type ClothingItem = {
   notes?: string | null
   contact?: string | null
   date_promised?: string | null
-  image?: string | null // base64 or data URL
-  amountGiven?: number | null // payment at registration
+  image?: string | null
+  amountGiven?: number | null
+  userId?: string // Add userId to associate with the authenticated user
 }
 
-const DB_KEY = 'pressing_items'
-localforage.config({ name: 'pressing-manager' })
+export type ClothingItemWithDeadline = ClothingItem & { days_left: number | null }
 
+// Collection name
+const COLLECTION_NAME = 'clothing_items'
+
+// Helper function to get current user ID
+function getCurrentUserId(): string {
+  const authStore = useAuthStore()
+  if (!authStore.user?.uid) {
+    throw new Error('User not authenticated')
+  }
+  return authStore.user.uid
+}
+
+// Convert Firestore timestamp to ISO string
+function timestampToString(timestamp: any): string {
+  if (!timestamp) return ''
+  if (timestamp.toDate) {
+    return timestamp.toDate().toISOString()
+  }
+  if (timestamp instanceof Date) {
+    return timestamp.toISOString()
+  }
+  return timestamp.toString()
+}
 
 export async function getAll(): Promise<ClothingItem[]> {
-  const arr = (await localforage.getItem<ClothingItem[]>(DB_KEY)) || []
-  return arr
-}
+  const userId = getCurrentUserId()
 
-async function saveAll(items: ClothingItem[]): Promise<void> {
-  // Save only plain objects, not Vue refs/reactives
-  const plain = items.map(i => ({ ...i, items: i.items ? i.items.map(x => ({ ...x })) : [] }))
-  await localforage.setItem(DB_KEY, plain)
+  const q = query(
+    collection(db, COLLECTION_NAME),
+    where('userId', '==', userId),
+    orderBy('date_received', 'desc')
+  )
+
+  const querySnapshot = await getDocs(q)
+  console.log('Total items found:', querySnapshot.size)
+
+  return querySnapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data(),
+    date_received: timestampToString(doc.data().date_received),
+    date_cleaned: doc.data().date_cleaned ? timestampToString(doc.data().date_cleaned) : null,
+    date_delivered: doc.data().date_delivered ? timestampToString(doc.data().date_delivered) : null,
+    date_promised: doc.data().date_promised ? timestampToString(doc.data().date_promised) : null,
+  })) as ClothingItem[]
 }
 
 export async function createItem(data: Partial<ClothingItem>): Promise<ClothingItem> {
-  const all = await getAll()
+  try {
+    const userId = getCurrentUserId()
+    console.log('Item data:', data)
+    
+    // Clean up undefined values recursively - Firebase doesn't allow undefined
+    function cleanObject(obj: any): any {
+      if (obj === null || obj === undefined) return null
+      if (Array.isArray(obj)) {
+        return obj.map(cleanObject)
+      }
+      if (typeof obj === 'object') {
+        const cleaned: any = {}
+        for (const [key, value] of Object.entries(obj)) {
+          if (value !== undefined) {
+            cleaned[key] = cleanObject(value)
+          }
+        }
+        return cleaned
+      }
+      return obj
+    }
+    
+    const cleanData = cleanObject(data)
+    
+    const itemData = {
+      ...cleanData,
+      userId,
+      status: 'received' as const,
+      date_received: data.date_received ? new Date(data.date_received) : new Date(),
+      date_promised: data.date_promised ? new Date(data.date_promised) : null,
+      date_cleaned: null,
+      date_delivered: null,
+    }
+    
+    console.log('Processed item data:', itemData)
 
-  const generateUniqueId = (existingIds: string[]): string => {
-    let newId: string;
-    do {
-      // Generates a 6-digit number as a string
-      newId = String(Math.floor(100000 + Math.random() * 900000));
-    } while (existingIds.includes(newId));
-    return newId;
-  }
+    const docRef = await addDoc(collection(db, COLLECTION_NAME), itemData)
+    console.log('Document created with ID:', docRef.id)
 
-  const item: ClothingItem = {
-    id: generateUniqueId(all.map(i => i.id)),
-    items: data.items || [],
-    description: data.description || '',
-    owner: (data.owner || '').toUpperCase(),
-    price: Number(data.price || 0),
-    status: 'received',
-    date_received: data.date_received || dayjs().toISOString(),
-    date_cleaned: null,
-    date_delivered: null,
-    notes: data.notes || null,
-    contact: data.contact || null,
-    date_promised: data.date_promised || dayjs().add(7, 'day').toISOString(),
-    image: data.image || null,
-    amountGiven: typeof data.amountGiven === 'number' ? data.amountGiven : null,
+    return {
+      id: docRef.id,
+      ...cleanData,
+      userId,
+      status: 'received',
+      date_received: itemData.date_received.toISOString(),
+      date_promised: itemData.date_promised?.toISOString() || null,
+      date_cleaned: null,
+      date_delivered: null,
+    } as ClothingItem
+  } catch (error) {
+    console.error('Error creating item:', error)
+    throw error
   }
-  all.push(item)
-  await saveAll(all)
-  return item
 }
 
 export async function getById(id: string): Promise<ClothingItem | undefined> {
-  const items = await getAll()
-  return items.find(i => i.id === id)
+  try {
+    const docRef = doc(db, COLLECTION_NAME, id)
+    const docSnap = await getDoc(docRef)
+
+    if (docSnap.exists()) {
+      const data = docSnap.data()
+      return {
+        id: docSnap.id,
+        ...data,
+        date_received: timestampToString(data.date_received),
+        date_cleaned: data.date_cleaned ? timestampToString(data.date_cleaned) : null,
+        date_delivered: data.date_delivered ? timestampToString(data.date_delivered) : null,
+        date_promised: data.date_promised ? timestampToString(data.date_promised) : null,
+      } as ClothingItem
+    }
+    return undefined
+  } catch (error) {
+    console.error('Error getting item:', error)
+    return undefined
+  }
 }
 
 export async function getByOwner(owner: string): Promise<ClothingItem[]> {
-  const items = await getAll()
-  return items.filter(i => i.owner === owner.toUpperCase())
+  const userId = getCurrentUserId()
+  console.log('Searching for items:', { owner, userId })
+
+  const q = query(
+    collection(db, COLLECTION_NAME),
+    where('userId', '==', userId),
+    where('owner', '==', owner),
+    orderBy('date_received', 'desc')
+  )
+
+  const querySnapshot = await getDocs(q)
+  console.log('Query snapshot size:', querySnapshot.size)
+  console.log('Query docs:', querySnapshot.docs.map(doc => ({ id: doc.id, data: doc.data() })))
+
+  return querySnapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data(),
+    date_received: timestampToString(doc.data().date_received),
+    date_cleaned: doc.data().date_cleaned ? timestampToString(doc.data().date_cleaned) : null,
+    date_delivered: doc.data().date_delivered ? timestampToString(doc.data().date_delivered) : null,
+    date_promised: doc.data().date_promised ? timestampToString(doc.data().date_promised) : null,
+  })) as ClothingItem[]
 }
 
 export async function getPendingOlderThan(days: number): Promise<ClothingItem[]> {
   const items = await getAll()
   const cutoff = dayjs().subtract(days, 'day')
-  return items.filter(i => i.status !== 'cleaned' && dayjs(i.date_received).isBefore(cutoff))
+  return items.filter(i => i.status !== 'delivered' && dayjs(i.date_received).isBefore(cutoff))
 }
 
-export type ClothingItemWithDeadline = ClothingItem & { days_left: number | null };
-
 export async function getWithDeadlines(owner?: string): Promise<ClothingItemWithDeadline[]> {
-  const items = await getAll()
-  const list = items.filter(i => !!i.date_promised && (!owner || i.owner === owner.toUpperCase()))
-  return list.map(i => ({
-    ...i,
-    days_left: i.date_promised ? dayjs(i.date_promised).diff(dayjs(), 'day') : null,
-  }))
+  const items = owner ? await getByOwner(owner) : await getAll()
+
+  // Filter out delivered items and items without promised dates
+  const filteredItems = items.filter(item =>
+    item.status !== 'delivered' &&
+    item.date_promised &&
+    item.status !== 'cleaned' // Only show items that haven't been cleaned yet
+  )
+
+  return filteredItems.map(item => {
+    let days_left: number | null = null
+    if (item.date_promised) {
+      const promisedDate = dayjs(item.date_promised)
+      const today = dayjs()
+      days_left = promisedDate.diff(today, 'day')
+    }
+
+    return {
+      ...item,
+      days_left
+    }
+  })
 }
 
 export async function updateStatus(id: string, status: ClothingItem['status']): Promise<ClothingItem | undefined> {
-  const items = await getAll()
-  const idx = items.findIndex(i => i.id === id)
-  if (idx === -1) return undefined
-  items[idx].status = status
-  if (status === 'cleaned') items[idx].date_cleaned = dayjs().toISOString()
-  if (status === 'delivered') items[idx].date_delivered = dayjs().toISOString()
-  await saveAll(items)
-  return items[idx]
+  try {
+    const docRef = doc(db, COLLECTION_NAME, id)
+    const updateData: any = { status }
+
+    // Set timestamp based on status
+    if (status === 'cleaned') {
+      updateData.date_cleaned = new Date()
+    } else if (status === 'delivered') {
+      updateData.date_delivered = new Date()
+    }
+
+    await updateDoc(docRef, updateData)
+
+    // Return updated item
+    return await getById(id)
+  } catch (error) {
+    console.error('Error updating status:', error)
+    return undefined
+  }
+}
+
+export async function updateItemsList(id: string, items: ItemLine[]): Promise<ClothingItem | undefined> {
+  try {
+    // First check if item exists and is not delivered
+    const currentItem = await getById(id)
+    if (!currentItem) {
+      throw new Error('Article non trouvé')
+    }
+    if (currentItem.status === 'delivered') {
+      throw new Error('Impossible de modifier un article déjà livré')
+    }
+
+    // Clean items data (remove undefined values)
+    const cleanedItems = items
+      .filter(item => item.type && item.type.trim()) // Only include items with valid type
+      .map(item => {
+        const cleanItem: any = {
+          type: item.type.trim(),
+          qty: item.qty
+        }
+        if (item.notes && item.notes.trim()) {
+          cleanItem.notes = item.notes.trim()
+        }
+        return cleanItem
+      })
+
+    if (cleanedItems.length === 0) {
+      throw new Error('Au moins un article doit être spécifié')
+    }
+
+    const docRef = doc(db, COLLECTION_NAME, id)
+    await updateDoc(docRef, { items: cleanedItems })
+
+    // Return updated item
+    return await getById(id)
+  } catch (error) {
+    console.error('Error updating items list:', error)
+    throw error
+  }
 }
 
 export async function getStats() {
   const items = await getAll()
-  const total_items = items.length
-  const cleaned_items = items.filter(i => i.status === 'cleaned').length
-  const delivered_items = items.filter(i => i.status === 'delivered').length
-  const pending_items = items.filter(i => i.status === 'received').length
-  const total_revenue = items.filter(i => i.status === 'delivered').reduce((s, i) => s + (i.price || 0), 0)
-  return { total_items, cleaned_items, delivered_items, pending_items, total_revenue }
-}
 
-export async function exportItems(): Promise<string> {
-  const items = await getAll()
-  return JSON.stringify({ version: 1, exported_at: new Date().toISOString(), items }, null, 2)
-}
+  // Calculate total revenue from all items
+  const total_revenue = items.reduce((sum, item) => {
+    const price = typeof item.price === 'number' ? item.price : 0
+    return sum + price
+  }, 0)
 
-export async function importItems(json: string): Promise<void> {
-  const data = JSON.parse(json)
-  if (!data || !Array.isArray(data.items)) throw new Error('Invalid file')
-  await saveAll(data.items as ClothingItem[])
-}
-
-export async function clearItems(): Promise<void> {
-  await saveAll([])
+  return {
+    total_items: items.length,
+    received_items: items.filter(i => i.status === 'received').length,
+    cleaned_items: items.filter(i => i.status === 'cleaned').length,
+    delivered_items: items.filter(i => i.status === 'delivered').length,
+    pending_items: items.filter(i => i.status !== 'delivered').length,
+    total_revenue: total_revenue
+  }
 }

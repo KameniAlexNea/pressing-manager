@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@ant-design/icons-vue": "^7.0.1",
+    "@capacitor-firebase/authentication": "^7.3.1",
     "@capacitor/android": "^7.4.3",
     "@capacitor/cli": "^7.4.3",
     "@capacitor/core": "^7.4.3",
@@ -17,11 +18,13 @@
     "ant-design-vue": "^4.1.2",
     "chart.js": "^4.5.0",
     "dayjs": "^1.11.11",
+    "firebase": "^12.2.1",
     "localforage": "^1.10.0",
     "pinia": "^2.1.7",
     "uuid": "^9.0.1",
     "vue": "^3.4.21",
     "vue-router": "^4.3.2",
+    "vuefire": "^3.2.2",
     "vuetify": "^3.6.7"
   },
   "devDependencies": {
